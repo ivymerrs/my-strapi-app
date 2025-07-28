@@ -219,7 +219,25 @@ class ChildInteractionSimulator:
         
         characteristics_str = "、".join(key_characteristics) if key_characteristics else "无特殊特征"
         
-        prompt = f"""请评估以下亲子沟通的质量。
+        prompt = f"""请严格评估以下亲子沟通的质量。评分标准如下：
+
+【评分标准】
+- 90-100分：完美沟通，完全理解孩子需求，表达恰当，给予充分支持
+- 80-89分：良好沟通，基本理解孩子需求，表达较恰当
+- 70-79分：一般沟通，部分理解孩子需求，表达有待改进
+- 60-69分：较差沟通，缺乏对孩子需求的理解，表达不当
+- 50-59分：差沟通，忽视孩子需求，表达伤害性
+- 40-49分：很差沟通，完全忽视孩子需求，表达极具伤害性
+- 30-39分：极差沟通，对孩子造成心理伤害
+
+【扣分项】
+- 指责、批评：-15分
+- 忽视孩子人格特质：-10分
+- 忽视核心需求：-10分
+- 命令式语气：-8分
+- 缺乏同理心：-8分
+- 过度控制：-5分
+- 情绪化表达：-5分
 
 孩子人格信息：
 - 人格名称：{personality_name}
@@ -235,11 +253,11 @@ class ChildInteractionSimulator:
 - 父母说："{parent_utterance}"
 - 孩子回应："{child_response}"
 
-请从以下角度进行评估，并以JSON格式返回结果：
+请严格按照评分标准进行评估，并以JSON格式返回结果：
 
 {{
-    "evaluation_score": 85,
-    "reason_analysis": "仅分析父母回应的质量，包括是否理解孩子需求、沟通方式是否恰当等",
+    "evaluation_score": 75,
+    "reason_analysis": "详细分析父母回应的质量，包括扣分原因和改进建议",
     "parent_input_analysis": {{
         "recognized_trait": "识别到的人格特质",
         "recognized_need": "识别到的核心需求",
@@ -251,13 +269,12 @@ class ChildInteractionSimulator:
     "child_desired_response_inner_monologue": "孩子内心独白"
 }}
 
-重要说明：
-1. reason_analysis 只分析父母的回应质量，不要分析孩子的回应
-2. 评估重点：父母是否理解孩子的人格特质和核心需求
-3. 沟通风格分析：父母的语气、表达方式、是否给予孩子足够的空间等
-4. 积极方面：父母做得好的地方
-5. 需要改进的方面：父母可以改进的地方
-6. child_desired_response_inner_monologue：请从孩子的角度，描述孩子听到父母这番话后的内心感受和想法，要体现孩子的人格特质和核心需求
+【评估要求】
+1. 严格按评分标准打分，不要过于温和
+2. 明确指出父母的错误和不足
+3. 分析是否理解孩子的人格特质和核心需求
+4. 评估沟通方式是否恰当
+5. 提供具体的改进建议
 
 请确保返回的是有效的JSON格式："""
 
@@ -336,17 +353,17 @@ class ChildInteractionSimulator:
                 # 如果JSON解析失败，使用默认值
                 result = {
                     "child_response": child_response,
-                    "evaluation_score": 75,
-                    "reason_analysis": "父母回应体现了关心，但可能需要更好地理解孩子的人格特质和需求",
+                    "evaluation_score": 65,
+                    "reason_analysis": "父母回应需要改进，缺乏对孩子人格特质和核心需求的深入理解",
                     "parent_input_analysis": {
                         "recognized_trait": current_personality.get('keycharacteristic', ['无'])[0] if current_personality.get('keycharacteristic') else '无',
                         "recognized_need": current_personality.get('core_need_description', '无'),
-                        "communication_style": "询问式",
-                        "positive_aspects": ["积极尝试沟通", "表达了对孩子的关心"],
-                        "areas_for_improvement": ["可以更具体地引导孩子", "需要更好地理解孩子的人格特质"]
+                        "communication_style": "一般询问式",
+                        "positive_aspects": ["尝试沟通"],
+                        "areas_for_improvement": ["需要更好地理解孩子的人格特质", "缺乏针对性的回应", "沟通方式需要改进"]
                     },
                     "child_desired_response": "理想回应",
-                    "child_desired_response_inner_monologue": f"（内心独白）作为{current_personality.get('name', '孩子')}，我感受到了父母的关心，但可能需要更多的理解和引导。"
+                    "child_desired_response_inner_monologue": f"（内心独白）作为{current_personality.get('name', '孩子')}，我希望父母能更好地理解我的{current_personality.get('core_need_description', '需求')}。"
                 }
             
             return result
@@ -356,17 +373,17 @@ class ChildInteractionSimulator:
             # 如果 API 调用失败，返回模拟响应
             mock_response = {
                 "child_response": f"（孩子作为'{current_personality.get('name')}'人格，在'{current_challenge.get('name')}'挑战下回应）我听到了你的话，我需要一点时间来思考一下。",
-                "evaluation_score": random.randint(60, 95),
-                "reason_analysis": "父母回应体现了关心，但可能需要更好地理解孩子的人格特质和核心需求。沟通方式相对温和，但可以更加具体和有针对性。",
+                "evaluation_score": random.randint(50, 75),
+                "reason_analysis": "父母回应需要改进，缺乏对孩子人格特质和核心需求的深入理解。沟通方式有待提升。",
                 "parent_input_analysis": {
                     "recognized_trait": current_personality.get('keycharacteristic', ['无'])[0] if current_personality.get('keycharacteristic') else '无',
                     "recognized_need": current_personality.get('core_need_description', '无'),
-                    "communication_style": "询问式，语气温和但可能缺乏针对性",
-                    "positive_aspects": ["积极尝试沟通", "语气温和", "表达了对孩子的关心"],
-                    "areas_for_improvement": ["可以更具体地引导孩子", "需要更好地理解孩子的人格特质", "可以更有针对性地回应孩子的核心需求"]
+                    "communication_style": "一般询问式，缺乏针对性",
+                    "positive_aspects": ["尝试沟通"],
+                    "areas_for_improvement": ["需要更好地理解孩子的人格特质", "缺乏针对性的回应", "沟通方式需要改进", "需要更有同理心"]
                 },
                 "child_desired_response": "（理想回应）谢谢你，妈妈/爸爸，给我点时间，我很快就会告诉你我的想法。",
-                "child_desired_response_inner_monologue": f"（内心独白）作为{current_personality.get('name', '孩子')}，我感受到了父母的关心。{current_personality.get('core_need_description', '我需要被理解和认可')}。虽然他们想帮助我，但有时候我需要更多的空间和时间来整理自己的想法。"
+                "child_desired_response_inner_monologue": f"（内心独白）作为{current_personality.get('name', '孩子')}，我希望父母能更好地理解我的{current_personality.get('core_need_description', '需求')}。"
             }
             print(f"DEBUG: 模拟响应内心独白字段值: {mock_response['child_desired_response_inner_monologue']}")
             return mock_response
