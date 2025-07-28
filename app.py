@@ -265,6 +265,18 @@ def get_personalities():
         print(f"DEBUG: 全局缓存键: {list(global_strapi_data_cache.keys())}")
         personalities_data = global_strapi_data_cache.get('personalities', [])
         print(f"DEBUG: 从缓存获取的人格数据: {personalities_data}")
+        
+        # 如果缓存为空，使用硬编码数据
+        if not personalities_data:
+            print("DEBUG: 缓存为空，使用硬编码数据")
+            hardcoded_personalities = [
+                {'id': 1, 'name': '内向敏感型'},
+                {'id': 2, 'name': '外向活泼型'},
+                {'id': 3, 'name': '专注执着型'},
+                {'id': 4, 'name': '创意想象型'}
+            ]
+            return jsonify(hardcoded_personalities)
+        
         result = [{'id': p.get('id'), 'name': p.get('name')} for p in personalities_data]
         print(f"DEBUG: 返回的人格数据: {result}")
         return jsonify(result)
@@ -283,6 +295,18 @@ def get_daily_challenges():
         print(f"DEBUG: 全局缓存键: {list(global_strapi_data_cache.keys())}")
         challenges_data = global_strapi_data_cache.get('daily_challenges', [])
         print(f"DEBUG: 从缓存获取的挑战数据: {challenges_data}")
+        
+        # 如果缓存为空，使用硬编码数据
+        if not challenges_data:
+            print("DEBUG: 缓存为空，使用硬编码数据")
+            hardcoded_challenges = [
+                {'id': 1, 'name': '学习困难'},
+                {'id': 2, 'name': '社交焦虑'},
+                {'id': 3, 'name': '情绪管理'},
+                {'id': 4, 'name': '注意力不集中'}
+            ]
+            return jsonify(hardcoded_challenges)
+        
         challenges_for_frontend = [
             {'id': c.get('id'), 'name': c.get('name')}
             for c in challenges_data
