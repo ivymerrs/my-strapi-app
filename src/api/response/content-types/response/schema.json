@@ -1,0 +1,60 @@
+{
+  "kind": "collectionType",
+  "collectionName": "responses",
+  "info": {
+    "singularName": "response",
+    "pluralName": "responses",
+    "displayName": "ParentFeedbackRule"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "reasonAnalysis": {
+      "type": "blocks"
+    },
+    "ruleName": {
+      "type": "text"
+    },
+    "parentKeywords": {
+      "type": "json"
+    },
+    "personality_traits": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::personality-trait.personality-trait",
+      "mappedBy": "parent_feedback_rule"
+    },
+    "evaluationGrade": {
+      "type": "enumeration",
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    "childDesiredResponseInnerMonologue": {
+      "type": "text"
+    },
+    "parentInputAnalysis": {
+      "type": "json"
+    },
+    "scenario": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::dialogue-scenario.dialogue-scenario",
+      "inversedBy": "parent_feedback_rules"
+    },
+    "suggestion_encouragement": {
+      "type": "blocks"
+    },
+    "daily_challenge": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::daily-challenge.daily-challenge",
+      "inversedBy": "parent_feedback_rules"
+    }
+  }
+}

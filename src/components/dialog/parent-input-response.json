@@ -1,0 +1,23 @@
+{
+  "collectionName": "components_dialog_parent_input_responses",
+  "info": {
+    "displayName": "ParentInputResponse",
+    "icon": "microphone"
+  },
+  "options": {},
+  "attributes": {
+    "parent_keywords": {
+      "type": "json"
+    },
+    "follow_up_prompt_hint": {
+      "type": "text"
+    },
+    "next_dialog_state_id": {
+      "type": "text"
+    },
+    "child_response_template": {
+      "type": "blocks"
+    }
+  },
+  "config": {}
+}

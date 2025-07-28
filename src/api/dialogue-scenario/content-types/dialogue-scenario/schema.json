@@ -1,0 +1,56 @@
+{
+  "kind": "collectionType",
+  "collectionName": "dialogue_scenarios",
+  "info": {
+    "singularName": "dialogue-scenario",
+    "pluralName": "dialogue-scenarios",
+    "displayName": "ScenarioInstance "
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "description": {
+      "type": "text"
+    },
+    "personality_trait": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::personality-trait.personality-trait",
+      "inversedBy": "dialogue_scenarios"
+    },
+    "ideal_responses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ideal-response.ideal-response",
+      "mappedBy": "dialogue_scenario"
+    },
+    "name": {
+      "type": "string"
+    },
+    "parent_feedback_rules": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::response.response",
+      "mappedBy": "scenario"
+    },
+    "child_typical_behavior": {
+      "type": "json",
+      "required": true
+    },
+    "parent_typical_emotion": {
+      "type": "json",
+      "required": false
+    },
+    "potential_root_causes": {
+      "type": "json"
+    },
+    "daily_challenges": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::daily-challenge.daily-challenge",
+      "mappedBy": "scenario"
+    }
+  }
+}

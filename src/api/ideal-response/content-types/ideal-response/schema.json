@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "ideal_responses",
+  "info": {
+    "singularName": "ideal-response",
+    "pluralName": "ideal-responses",
+    "displayName": "ideal_response"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "content": {
+      "type": "blocks"
+    },
+    "personality_trait": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::personality-trait.personality-trait",
+      "inversedBy": "ideal_responses"
+    },
+    "dialogue_scenario": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::dialogue-scenario.dialogue-scenario",
+      "inversedBy": "ideal_responses"
+    },
+    "core_need": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::core-need.core-need",
+      "inversedBy": "ideal_responses"
+    }
+  }
+}

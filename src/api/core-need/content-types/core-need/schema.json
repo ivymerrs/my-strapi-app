@@ -1,0 +1,36 @@
+{
+  "kind": "collectionType",
+  "collectionName": "core_needs",
+  "info": {
+    "singularName": "core-need",
+    "pluralName": "core-needs",
+    "displayName": "core_need"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "description": {
+      "type": "text"
+    },
+    "personality_traits": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::personality-trait.personality-trait",
+      "inversedBy": "core_needs"
+    },
+    "name": {
+      "type": "string"
+    },
+    "ideal_responses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ideal-response.ideal-response",
+      "mappedBy": "core_need"
+    },
+    "phraseexample": {
+      "type": "text"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "kind": "collectionType",
+  "collectionName": "trait_expressions",
+  "info": {
+    "singularName": "trait-expression",
+    "pluralName": "trait-expressions",
+    "displayName": "trait expression "
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "personality_trait": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::personality-trait.personality-trait"
+    },
+    "daily_challenge": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::daily-challenge.daily-challenge",
+      "inversedBy": "trait_expressions"
+    },
+    "initia_dialog": {
+      "type": "string"
+    },
+    "parent_inputs_map": {
+      "type": "component",
+      "component": "dialog.parent-input-response",
+      "repeatable": true
+    },
+    "general_response_guidance": {
+      "type": "blocks"
+    }
+  }
+}

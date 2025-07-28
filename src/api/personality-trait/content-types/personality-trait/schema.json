@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "personality_traits",
+  "info": {
+    "singularName": "personality-trait",
+    "pluralName": "personality-traits",
+    "displayName": "personality trait"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string"
+    },
+    "dialogue_scenarios": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::dialogue-scenario.dialogue-scenario",
+      "mappedBy": "personality_trait"
+    },
+    "ideal_responses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::ideal-response.ideal-response",
+      "mappedBy": "personality_trait"
+    },
+    "core_needs": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::core-need.core-need",
+      "mappedBy": "personality_traits"
+    },
+    "description": {
+      "type": "text"
+    },
+    "keycharacteristic": {
+      "type": "json"
+    },
+    "parent_feedback_rule": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::response.response",
+      "inversedBy": "personality_traits"
+    },
+    "core_need_description": {
+      "type": "text"
+    }
+  }
+}

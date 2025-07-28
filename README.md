@@ -1,61 +1,125 @@
-# 🚀 Getting started with Strapi
+# 亲子沟通模拟器
 
-Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/dev-docs/cli) (CLI) which lets you scaffold and manage your project in seconds.
+一个基于 AI 的亲子沟通模拟工具，帮助家长学习如何与不同人格特质的孩子进行有效沟通。
 
-### `develop`
+## 功能特点
 
-Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)
+- 🎯 **人格特质模拟**：支持多种孩子人格类型的模拟
+- 🧠 **AI 驱动对话**：使用阿里云千问模型生成真实的对话回应
+- 📊 **智能评估**：提供详细的沟通质量评估和改进建议
+- 🎨 **现代化界面**：美观的用户界面，支持响应式设计
+- 🔄 **实时反馈**：即时显示孩子回应和评估结果
+
+## 技术栈
+
+- **后端**：Flask (Python)
+- **前端**：HTML5, CSS3, JavaScript
+- **AI 模型**：阿里云千问 (Qwen)
+- **数据管理**：Strapi CMS
+- **部署**：支持 Render, Railway, Heroku 等平台
+
+## 快速开始
+
+### 本地开发
+
+1. **克隆项目**
+   ```bash
+   git clone <your-repo-url>
+   cd my-project
+   ```
+
+2. **安装依赖**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **配置环境变量**
+   创建 `.env` 文件：
+   ```bash
+   STRAPI_URL=http://localhost:1337
+   STRAPI_API_TOKEN=your_strapi_api_token
+   ALIYUN_DASHSCOPE_API_KEY=your_aliyun_api_key
+   ```
+
+4. **启动应用**
+   ```bash
+   python app.py
+   ```
+
+5. **访问应用**
+   打开浏览器访问 `http://localhost:5000`
+
+### 生产部署
+
+详细的部署指南请参考 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+## 项目结构
 
 ```
-npm run develop
-# or
-yarn develop
+my-project/
+├── app.py                 # Flask 主应用
+├── child_main.py          # 核心模拟逻辑
+├── requirements.txt       # Python 依赖
+├── Procfile              # 部署配置
+├── runtime.txt           # Python 版本
+├── templates/
+│   └── index.html        # 主页面模板
+├── static/
+│   └── script.js         # 前端 JavaScript
+├── config/               # Strapi 配置
+└── README.md            # 项目说明
 ```
 
-### `start`
+## 环境变量
 
-Start your Strapi application with autoReload disabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-start)
+| 变量名 | 描述 | 必需 |
+|--------|------|------|
+| `STRAPI_URL` | Strapi 服务器地址 | ✅ |
+| `STRAPI_API_TOKEN` | Strapi API 令牌 | ✅ |
+| `ALIYUN_DASHSCOPE_API_KEY` | 阿里云 API 密钥 | ✅ |
 
-```
-npm run start
-# or
-yarn start
-```
+## 使用说明
 
-### `build`
+1. **选择孩子人格**：从下拉菜单中选择孩子的人格类型
+2. **选择挑战主题**：选择当前面临的挑战或情境
+3. **输入家长话语**：在文本框中输入您想对孩子说的话
+4. **开始模拟**：点击"开始模拟对话"按钮
+5. **查看结果**：系统会显示孩子的回应和详细的评估分析
 
-Build your admin panel. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-build)
+## 评估维度
 
-```
-npm run build
-# or
-yarn build
-```
+- **沟通评估**：整体沟通质量评分
+- **父级输入分析**：识别的人格特质和核心需求
+- **积极方面**：沟通中的优点
+- **改进建议**：可以改进的地方
+- **孩子内心独白**：孩子的内心感受
 
-## ⚙️ Deployment
+## 贡献指南
 
-Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开 Pull Request
 
-```
-yarn strapi deploy
-```
+## 许可证
 
-## 📚 Learn more
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
 
-- [Resource center](https://strapi.io/resource-center) - Strapi resource center.
-- [Strapi documentation](https://docs.strapi.io) - Official Strapi documentation.
-- [Strapi tutorials](https://strapi.io/tutorials) - List of tutorials made by the core team and the community.
-- [Strapi blog](https://strapi.io/blog) - Official Strapi blog containing articles made by the Strapi team and the community.
-- [Changelog](https://strapi.io/changelog) - Find out about the Strapi product updates, new features and general improvements.
+## 支持
 
-Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/strapi). Your feedback and contributions are welcome!
+如果您遇到问题或有建议，请：
 
-## ✨ Community
+1. 查看 [DEPLOYMENT.md](./DEPLOYMENT.md) 中的故障排除部分
+2. 检查环境变量配置
+3. 查看应用日志
+4. 提交 Issue 或联系维护者
 
-- [Discord](https://discord.strapi.io) - Come chat with the Strapi community including the core team.
-- [Forum](https://forum.strapi.io/) - Place to discuss, ask questions and find answers, show your Strapi project and get feedback or just talk with other Community members.
-- [Awesome Strapi](https://github.com/strapi/awesome-strapi) - A curated list of awesome things related to Strapi.
+## 更新日志
 
----
-
-<sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+### v1.0.0
+- 初始版本发布
+- 支持基本的人格模拟功能
+- 集成阿里云千问 AI 模型
+- 现代化用户界面
+- 详细的评估分析功能
