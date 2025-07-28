@@ -19,15 +19,22 @@ STRAPI_API_SCENARIO_PATH = "dialogue-scenarios"
 
 class ChildInteractionSimulator:
     def __init__(self, personality_data, trait_expression_data, scenario_instance_data, daily_challenges_data):
-        # 1. 基础验证：确保传入的数据列表不为空
-        if not (personality_data and trait_expression_data and scenario_instance_data and daily_challenges_data):
+        # 1. 基础验证：确保传入的数据列表存在（可以为空，但不能为None）
+        if personality_data is None or trait_expression_data is None or scenario_instance_data is None or daily_challenges_data is None:
             raise ValueError("初始化ChildInteractionSimulator需要完整的人格、特质表现、情境实例和日常挑战数据。")
 
         # 2. 将从 app.py 接收到的所有数据列表存储为实例变量
-        self.personalities = personality_data
-        self.trait_expressions = trait_expression_data
-        self.scenario_instances = scenario_instance_data
-        self.daily_challenges = daily_challenges_data
+        self.personalities = personality_data or []
+        self.trait_expressions = trait_expression_data or []
+        self.scenario_instances = scenario_instance_data or []
+        self.daily_challenges = daily_challenges_data or []
+        
+        # 3. 打印初始化信息
+        print(f"ChildInteractionSimulator initialized with:")
+        print(f"  - Personalities: {len(self.personalities)} items")
+        print(f"  - Trait expressions: {len(self.trait_expressions)} items")
+        print(f"  - Scenario instances: {len(self.scenario_instances)} items")
+        print(f"  - Daily challenges: {len(self.daily_challenges)} items")
 
         # --- 【关键修改】移除所有试图在 __init__ 中直接从列表提取单个属性的代码 ---
         # 您之前可能有的类似如下的行，都应该被删除或注释掉：
