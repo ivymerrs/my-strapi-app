@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, jsonify, g
 import requests
 import random
 import os
+from datetime import datetime
 from child_main import ChildInteractionSimulator
 from flask_cors import CORS # 确保已安装 pip install Flask-Cors
 from dotenv import load_dotenv
@@ -34,68 +35,76 @@ if not ALIYUN_DASHSCOPE_API_KEY:
 # --- 辅助函数：从 Strapi 获取数据 ---
 # 这个函数应该在所有需要使用它的函数之前定义
 def _get_entity_data_from_strapi(api_uid, populate_all=False):
-    strapi_url = os.getenv('STRAPI_URL', 'http://localhost:1337')
-    api_token = os.getenv('STRAPI_API_TOKEN')
-
-    if not api_token:
-        print("警告: 未设置 STRAPI_API_TOKEN 环境变量。某些功能可能无法工作。")
-        return []
-
-    headers = {
-        'Authorization': f'Bearer {api_token}',
-        'Content-Type': 'application/json'
-    }
-
-    populate_param = "populate=*" if populate_all else ""
-    url = f"{strapi_url}/api/{api_uid}?{populate_param}"
-    
-    print(f"DEBUG: 正在请求 Strapi API: {url}")
-
+    """从 Strapi 获取指定 API 的数据"""
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status() # 对 4xx 或 5xx 状态码抛出 HTTPError
-        data = response.json()
-
-        if 'data' in data and isinstance(data['data'], list):
-            extracted_data = []
-            for item in data['data']:
-                # --- 【新增调试打印】查看原始 item 结构 ---
-                print(f"DEBUG: Strapi 原始 Item ({api_uid}): {item}")
-                print(f"DEBUG: Item ID: {item.get('id')}")
-                print(f"DEBUG: Item Attributes: {item.get('attributes')}")
-                # --- 结束新增调试打印 ---
-
-                extracted_item = {
-                    'id': item.get('id')
-                }
-                # 遍历 item 字典中的所有键值对，将它们直接添加到 extracted_item 中
-                # 排除可能不是我们直接想要的复杂嵌套结构，或按需选择
-                for key, value in item.items():
-                    # 排除 'id' 和 'attributes' (因为它不存在了)
-                    # 排除嵌套对象和列表，除非你希望直接平铺它们（对于 name/description 这种简单字段是没问题的）
-                    # 对于 'name', 'description', 'createdAt', 'updatedAt', 'publishedAt' 等简单字段，可以直接提取
-                    # 对于关联字段 (如 'dialogue_scenarios', 'core_needs')，如果需要，可能需要更复杂的递归处理
-                    if key not in ['id', 'attributes']: # 确保不重复添加id，且忽略attributes
-                        # 简单的平铺，直接提取顶层字段
-                        extracted_item[key] = value
-                
-                # 如果你只关心 'id' 和 'name' 并且其他字段是可选的，可以简化成这样：
-                # extracted_item = {
-                #     'id': item.get('id'),
-                #     'name': item.get('name') # 直接从 item 中获取 'name'
-                # }
-
-                extracted_data.append(extracted_item)
-
-                # ⚠️ 之前关于 'name' 缺失的警告可以保留，但现在应该不会再触发了，因为直接从 item 中获取了
-                if 'name' not in extracted_item:
-                     print(f"警告: Strapi实体 {api_uid} (ID: {item.get('id')}) 缺少 'name' 属性。原始 Item: {item}")
-            return extracted_data
-        else:
-            print(f"警告: Strapi API '{api_uid}' 返回的数据结构不符合预期或无数据: {data}")
+        # 获取环境变量
+        strapi_url = os.getenv('STRAPI_URL')
+        api_token = os.getenv('STRAPI_API_TOKEN')
+        
+        print(f"DEBUG: STRAPI_URL = {strapi_url}")
+        print(f"DEBUG: STRAPI_API_TOKEN = {api_token[:10]}..." if api_token else "NOT_SET")
+        
+        if not strapi_url or not api_token:
+            print("ERROR: STRAPI_URL 或 STRAPI_API_TOKEN 未设置")
             return []
-    except requests.exceptions.RequestException as e:
-        print(f"错误: 访问 Strapi API '{api_uid}' 失败: {e}")
+
+        # 构建请求 URL
+        base_url = strapi_url.rstrip('/')
+        api_url = f"{base_url}/api/{api_uid}"
+        
+        # 设置请求头
+        headers = {
+            'Authorization': f'Bearer {api_token}',
+            'Content-Type': 'application/json'
+        }
+        
+        # 设置查询参数
+        params = {}
+        if populate_all:
+            params['populate'] = '*'
+        
+        print(f"DEBUG: 正在从 Strapi 获取数据 - URL: {api_url}")
+        print(f"DEBUG: 请求头: {headers}")
+        print(f"DEBUG: 查询参数: {params}")
+        
+        # 发送请求
+        response = requests.get(api_url, headers=headers, params=params, timeout=30)
+        
+        print(f"DEBUG: Strapi 响应状态码: {response.status_code}")
+        print(f"DEBUG: Strapi 响应内容: {response.text[:1000]}...")  # 显示更多内容
+        
+        if response.status_code == 200:
+            data = response.json()
+            items = data.get('data', [])
+            
+            print(f"DEBUG: 原始数据项数量: {len(items)}")
+            if items:
+                print(f"DEBUG: 第一个数据项示例: {items[0]}")
+            
+            # 提取和扁平化数据
+            extracted_items = []
+            for item in items:
+                extracted_item = {'id': item.get('id')}
+                # 将 attributes 中的所有字段直接提取到顶层
+                if 'attributes' in item:
+                    for key, value in item['attributes'].items():
+                        if key != 'id':  # 避免重复
+                            extracted_item[key] = value
+                extracted_items.append(extracted_item)
+            
+            print(f"DEBUG: 成功提取 {len(extracted_items)} 条数据")
+            if extracted_items:
+                print(f"DEBUG: 第一个提取项示例: {extracted_items[0]}")
+            return extracted_items
+        else:
+            print(f"ERROR: Strapi API 请求失败，状态码: {response.status_code}")
+            print(f"ERROR: 错误响应: {response.text}")
+            return []
+            
+    except Exception as e:
+        print(f"ERROR: 从 Strapi 获取数据时发生异常: {e}")
+        import traceback
+        print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
         return []
 
 # --- 加载评估规则 ---
@@ -191,6 +200,14 @@ def setup_application_data_and_simulator():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/test')
+def test():
+    """简单的测试端点"""
+    return jsonify({
+        'message': 'Hello from Flask!',
+        'timestamp': str(datetime.now())
+    })
 
 @app.route('/health')
 def health_check():
