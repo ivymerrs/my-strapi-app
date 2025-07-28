@@ -102,10 +102,18 @@ def _get_entity_data_from_strapi(api_uid, populate_all=False):
             # 提取和扁平化数据
             extracted_items = []
             for item in items:
+                print(f"DEBUG: 处理数据项: {item}")
                 extracted_item = {'id': item.get('id')}
                 # 将 attributes 中的所有字段直接提取到顶层
                 if 'attributes' in item:
+                    print(f"DEBUG: 找到 attributes: {item['attributes']}")
                     for key, value in item['attributes'].items():
+                        if key != 'id':  # 避免重复
+                            extracted_item[key] = value
+                else:
+                    print(f"DEBUG: 没有找到 attributes，直接使用顶层字段")
+                    # 如果没有 attributes，直接使用顶层字段
+                    for key, value in item.items():
                         if key != 'id':  # 避免重复
                             extracted_item[key] = value
                 extracted_items.append(extracted_item)
