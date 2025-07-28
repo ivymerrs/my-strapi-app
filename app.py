@@ -192,25 +192,66 @@ def setup_application_data_and_simulator():
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health_check():
+    """健康检查端点，用于测试应用状态"""
+    try:
+        return jsonify({
+            'status': 'healthy',
+            'cache_keys': list(global_strapi_data_cache.keys()),
+            'personalities_count': len(global_strapi_data_cache.get('personalities', [])),
+            'daily_challenges_count': len(global_strapi_data_cache.get('daily_challenges', [])),
+            'simulator_initialized': global_simulator_instance is not None,
+            'environment_vars': {
+                'STRAPI_URL': 'SET' if os.getenv('STRAPI_URL') else 'NOT_SET',
+                'STRAPI_API_TOKEN': 'SET' if os.getenv('STRAPI_API_TOKEN') else 'NOT_SET',
+                'ALIYUN_DASHSCOPE_API_KEY': 'SET' if os.getenv('ALIYUN_DASHSCOPE_API_KEY') else 'NOT_SET'
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e)
+        }), 500
+
 @app.route('/get_personalities', methods=['GET'])
 def get_personalities():
     """获取所有人格特质的名称和 ID，用于前端下拉菜单"""
-    # 直接从已缓存的全局数据中返回，无需再次请求 Strapi
-    # 确保这里的返回格式是前端期望的 [{id: x, name: 'y'}]
-    return jsonify([{'id': p.get('id'), 'name': p.get('name')} for p in global_strapi_data_cache['personalities']])
+    try:
+        print("DEBUG: 开始获取人格数据")
+        print(f"DEBUG: 全局缓存键: {list(global_strapi_data_cache.keys())}")
+        personalities_data = global_strapi_data_cache.get('personalities', [])
+        print(f"DEBUG: 从缓存获取的人格数据: {personalities_data}")
+        result = [{'id': p.get('id'), 'name': p.get('name')} for p in personalities_data]
+        print(f"DEBUG: 返回的人格数据: {result}")
+        return jsonify(result)
+    except Exception as e:
+        print(f"ERROR: 获取人格数据失败: {e}")
+        import traceback
+        print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
+        return jsonify([]), 500
 
 
 @app.route('/get_daily_challenges', methods=['GET'])
 def get_daily_challenges():
     """获取所有日常挑战的名称和 ID，用于前端下拉菜单"""
-    # 【修改】从 daily_challenges 缓存中获取数据
-    challenges_for_frontend = [
-        {'id': c.get('id'), 'name': c.get('name')}
-        for c in global_strapi_data_cache['daily_challenges']
-        if c.get('id') and c.get('name') # 确保 ID 和 name 存在
-    ]
-    print(f"DEBUG: Preparing daily challenges for frontend: {challenges_for_frontend}")
-    return jsonify(challenges_for_frontend)
+    try:
+        print("DEBUG: 开始获取日常挑战数据")
+        print(f"DEBUG: 全局缓存键: {list(global_strapi_data_cache.keys())}")
+        challenges_data = global_strapi_data_cache.get('daily_challenges', [])
+        print(f"DEBUG: 从缓存获取的挑战数据: {challenges_data}")
+        challenges_for_frontend = [
+            {'id': c.get('id'), 'name': c.get('name')}
+            for c in challenges_data
+            if c.get('id') and c.get('name') # 确保 ID 和 name 存在
+        ]
+        print(f"DEBUG: 返回的挑战数据: {challenges_for_frontend}")
+        return jsonify(challenges_for_frontend)
+    except Exception as e:
+        print(f"ERROR: 获取日常挑战数据失败: {e}")
+        import traceback
+        print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
+        return jsonify([]), 500
 
 
 @app.route('/get_scenarios_by_challenge_id/<int:challenge_id>', methods=['GET'])
