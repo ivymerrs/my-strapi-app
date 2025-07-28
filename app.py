@@ -14,8 +14,26 @@ load_dotenv()
 app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app) # 启用 CORS
 
+# --- 在第一次请求时初始化数据 ---
+@app.before_request
+def initialize_data_on_first_request():
+    global data_initialized
+    if not data_initialized:
+        print("DEBUG: 第一次请求，开始初始化数据...")
+        try:
+            setup_application_data_and_simulator()
+            data_initialized = True
+            print("DEBUG: 数据初始化完成")
+        except Exception as e:
+            print(f"ERROR: 数据初始化失败: {e}")
+            import traceback
+            print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
+
 # --- 全局变量：用于存储模拟器实例和 Strapi 数据缓存 ---
 global_simulator_instance = None # 存储 ChildInteractionSimulator 的一个实例
+
+# --- 全局变量：数据初始化标志 ---
+data_initialized = False
 global_strapi_data_cache = {
     'personalities': [],
     'trait_expressions': [],
