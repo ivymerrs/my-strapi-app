@@ -3,7 +3,15 @@ services:
     name: my-strapi-app
     env: node
     plan: free
-    buildCommand: chmod +x .render-build.sh && ./.render-build.sh
+    buildCommand: |
+      echo "=== Strapi Build with npm ==="
+      echo "Node version: $(node --version)"
+      echo "NPM version: $(npm --version)"
+      echo "Installing dependencies..."
+      npm ci --only=production
+      echo "Building Strapi application..."
+      npm run build
+      echo "Build completed!"
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -12,5 +20,5 @@ services:
         value: sqlite
       - key: DATABASE_FILENAME
         value: .tmp/data.db
-      - key: NPM_CONFIG_PACKAGE_LOCK_ONLY
-        value: "true" 
+      - key: NODE_VERSION
+        value: "20" 
