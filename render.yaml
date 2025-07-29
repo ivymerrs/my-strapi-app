@@ -11,13 +11,17 @@ services:
       npm ci --only=production
       echo "Installing sharp for Linux..."
       npm install --os=linux --cpu=x64 sharp
-      echo "Disabling SWC compiler and building admin panel..."
+      echo "Setting environment variables..."
       export STRAPI_DISABLE_SWC=true
       export NODE_OPTIONS="--max-old-space-size=4096"
-      echo "Building Strapi application with admin panel..."
-      STRAPI_DISABLE_SWC=true npm run build:admin
-      echo "Verifying admin panel build..."
-      ls -la node_modules/@strapi/admin/dist/server/server/build/ || echo "Admin panel build directory not found"
+      echo "Building Strapi application..."
+      npm run build
+      echo "Checking build results..."
+      echo "Current directory: $(pwd)"
+      echo "Directory contents:"
+      ls -la
+      echo "Dist directory:"
+      ls -la dist/ || echo "dist directory not found"
       echo "Build completed!"
     startCommand: npm start
     envVars:
