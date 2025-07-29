@@ -11,8 +11,9 @@ services:
       npm ci --only=production
       echo "Disabling SWC compiler..."
       export STRAPI_DISABLE_SWC=true
+      export NODE_OPTIONS="--max-old-space-size=4096"
       echo "Building Strapi application..."
-      npm run build
+      STRAPI_DISABLE_SWC=true npm run build
       echo "Build completed!"
     startCommand: npm start
     envVars:
@@ -27,4 +28,8 @@ services:
       - key: STRAPI_DISABLE_UPLOAD
         value: "true"
       - key: STRAPI_DISABLE_SWC
-        value: "true" 
+        value: "true"
+      - key: STRAPI_TELEMETRY_DISABLED
+        value: "true"
+      - key: NODE_OPTIONS
+        value: "--max-old-space-size=4096" 
