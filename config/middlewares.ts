@@ -9,4 +9,12 @@ export default [
   'strapi::session',
   'strapi::favicon',
   'strapi::public',
+  // Add custom middleware for API permissions
+  {
+    name: 'strapi::api-permissions',
+    config: {
+      enabled: true,
+      publicAccess: true,
+    },
+  },
 ];

@@ -58,4 +58,8 @@ services:
       - key: STRAPI_PUBLIC_API_ENABLED
         value: "true"
       - key: STRAPI_PUBLIC_API_PERMISSIONS
-        value: "find,findOne" 
+        value: "find,findOne"
+      - key: STRAPI_PUBLIC_ACCESS
+        value: "true"
+      - key: STRAPI_DISABLE_PERMISSIONS
+        value: "true" 
