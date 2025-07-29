@@ -1,4 +1,9 @@
 export default () => ({
-  // Disable upload plugin to avoid sharp dependency issues
-  upload: false,
+  // Completely disable upload plugin to avoid sharp dependency
+  upload: {
+    enabled: false,
+    config: {
+      provider: null,
+    },
+  },
 });

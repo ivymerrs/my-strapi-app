@@ -21,4 +21,6 @@ services:
       - key: DATABASE_FILENAME
         value: .tmp/data.db
       - key: NODE_VERSION
-        value: "20" 
+        value: "20"
+      - key: STRAPI_DISABLE_UPLOAD
+        value: "true" 
