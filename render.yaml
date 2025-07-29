@@ -34,4 +34,8 @@ services:
       - key: STRAPI_TELEMETRY_DISABLED
         value: "true"
       - key: NODE_OPTIONS
-        value: "--max-old-space-size=4096" 
+        value: "--max-old-space-size=4096"
+      - key: STRAPI_UPLOAD_PROVIDER
+        value: "local"
+      - key: STRAPI_UPLOAD_PROVIDER_OPTIONS
+        value: "{}" 
