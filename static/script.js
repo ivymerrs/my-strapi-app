@@ -25,13 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 修正这里：确保从每个对象中提取 'name' 字段
             personalities.forEach(p => { // p 现在是 {'id': ..., 'name': '...'} 对象
-                const option = document.createElement('option');
+                    const option = document.createElement('option');
                 option.value = p.id; // value 使用 ID，发送给后端
                 option.textContent = p.name; // textContent 显示 name
-                personalitySelect.appendChild(option);
-            });
+                    personalitySelect.appendChild(option);
+                });
             // 默认选中第一个（如果有数据的话）
-            if (personalities.length > 0) {
+                if (personalities.length > 0) {
                 personalitySelect.value = personalities[0].id; // 默认选中第一个的ID
             }
         })
@@ -43,11 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             console.log("DEBUG (Frontend): 接收到的挑战原始数据:", data); // 保留调试信息
             data.forEach(c => {
-                const option = document.createElement('option');
+                    const option = document.createElement('option');
                 option.value = c.id; // value 使用 ID，发送给后端
                 option.textContent = c.name; // textContent 显示 name
                 dailyChallengeSelect.appendChild(option); // 修改 ID
-            });
+                });
             // 默认选中第一个（如果有数据的话）
             if (data.length > 0) {
                 dailyChallengeSelect.value = data[0].id;

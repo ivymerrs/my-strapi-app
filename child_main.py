@@ -536,7 +536,7 @@ class ChildInteractionSimulator:
                 prompt_parts.append(f"请特别注意后续对话的微调提示：{matched_follow_up_hint}")
             return "\n".join(prompt_parts)
         else:
-            prompt = f"""
+        prompt = f"""
             你是一个模拟孩子。
             你的性格特征是：{self.personality_desc}
             你的核心需求是：{self.personality_core_need}
@@ -556,8 +556,8 @@ class ChildInteractionSimulator:
             家长对你说：“{parent_input}”
 
             你的回复：
-            """
-            return prompt
+        """
+        return prompt
 
     def _call_llm(self, prompt_type: str, prompt_content: str):
         return call_llm_placeholder(prompt_type, prompt_content)
