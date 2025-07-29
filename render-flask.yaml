@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: parent-child-simulator
+    env: python
+    plan: free
+    buildCommand: |
+      echo "=== Installing Python dependencies ==="
+      pip install -r requirements.txt
+      echo "=== Build completed ==="
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: STRAPI_URL
+        value: "https://my-strapi-app-uaeb.onrender.com"
+      - key: STRAPI_API_TOKEN
+        value: "your-strapi-api-token-here"
+      - key: ALIYUN_DASHSCOPE_API_KEY
+        value: "your-aliyun-api-key-here"
+      - key: FLASK_ENV
+        value: "production" 
