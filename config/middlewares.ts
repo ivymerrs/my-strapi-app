@@ -9,4 +9,11 @@ export default [
   'strapi::session',
   'strapi::favicon',
   'strapi::public',
+  // Disable upload middleware
+  {
+    name: 'strapi::upload',
+    config: {
+      enabled: false,
+    },
+  },
 ];

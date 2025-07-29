@@ -9,6 +9,8 @@ services:
       echo "NPM version: $(npm --version)"
       echo "Installing dependencies..."
       npm ci --only=production
+      echo "Installing sharp for Linux..."
+      npm install --os=linux --cpu=x64 sharp
       echo "Disabling SWC compiler..."
       export STRAPI_DISABLE_SWC=true
       export NODE_OPTIONS="--max-old-space-size=4096"
