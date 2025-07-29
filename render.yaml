@@ -9,6 +9,8 @@ services:
       echo "NPM version: $(npm --version)"
       echo "Installing dependencies..."
       npm ci --only=production
+      echo "Disabling SWC compiler..."
+      export STRAPI_DISABLE_SWC=true
       echo "Building Strapi application..."
       npm run build
       echo "Build completed!"
@@ -23,4 +25,6 @@ services:
       - key: NODE_VERSION
         value: "20"
       - key: STRAPI_DISABLE_UPLOAD
+        value: "true"
+      - key: STRAPI_DISABLE_SWC
         value: "true" 

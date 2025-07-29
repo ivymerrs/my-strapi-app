@@ -37,6 +37,9 @@
   },
   "strapi": {
     "uuid": "1eb56891-c024-4a3e-aa11-11213edbf5a3",
-    "installId": "b7ff1d5599dec687d958077e6f6ad98baaa1d9a9e6f0d9757c563aa6cb2164e4"
+    "installId": "b7ff1d5599dec687d958077e6f6ad98baaa1d9a9e6f0d9757c563aa6cb2164e4",
+    "config": {
+      "swc": false
+    }
   }
 }
