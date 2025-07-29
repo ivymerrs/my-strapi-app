@@ -48,4 +48,10 @@ services:
       - key: STRAPI_ADMIN_PATH
         value: "/admin"
       - key: STRAPI_ADMIN_BACKEND_URL
-        value: "https://my-strapi-app-uaeb.onrender.com" 
+        value: "https://my-strapi-app-uaeb.onrender.com"
+      - key: ADMIN_JWT_SECRET
+        value: "your-admin-jwt-secret-key-here"
+      - key: API_TOKEN_SALT
+        value: "your-api-token-salt-here"
+      - key: TRANSFER_TOKEN_SALT
+        value: "your-transfer-token-salt-here" 
