@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: my-strapi-app
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_CLIENT
+        value: sqlite
+      - key: DATABASE_FILENAME
+        value: .tmp/data.db 

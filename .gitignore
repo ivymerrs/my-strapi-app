@@ -61,3 +61,9 @@ logs/
 *.tmp
 *.temp
 node_modules
+
+# Yarn (ensure npm is used)
+yarn.lock
+.yarnrc
+.yarnrc.yml
+.pnp.*
