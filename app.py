@@ -57,43 +57,51 @@ def _get_entity_data_from_strapi(api_uid, populate_all=False):
     try:
         # 获取环境变量
         strapi_url = os.getenv('STRAPI_URL')
-        api_token = os.getenv('STRAPI_API_TOKEN')
         
         print(f"DEBUG: STRAPI_URL = {strapi_url}")
-        print(f"DEBUG: STRAPI_API_TOKEN = {api_token[:10]}..." if api_token else "NOT_SET")
         
-        if not strapi_url or not api_token:
-            print("ERROR: STRAPI_URL 或 STRAPI_API_TOKEN 未设置")
+        if not strapi_url:
+            print("ERROR: STRAPI_URL 未设置")
             return []
 
-        # 构建请求 URL
+        # 构建请求 URL - 使用公开 API
         base_url = strapi_url.rstrip('/')
-        api_url = f"{base_url}/api/{api_uid}"
         
-        # 设置请求头
+        # 根据 API UID 映射到公开 API 端点
+        api_mapping = {
+            'core-needs': 'public/core-needs',
+            'personality-traits': 'public/personality-traits',
+            'dialogue-scenarios': 'public/dialogue-scenarios',
+            'ideal-responses': 'public/ideal-responses',
+            'responses': 'public/responses',
+            'trait-expressions': 'public/trait-expressions',
+            'daily-challenges': 'public/daily-challenges'
+        }
+        
+        # 如果没有映射，使用默认的公开 API 格式
+        if api_uid in api_mapping:
+            api_url = f"{base_url}/api/{api_mapping[api_uid]}"
+        else:
+            api_url = f"{base_url}/api/public/{api_uid}"
+        
+        # 设置请求头 - 公开 API 不需要认证
         headers = {
-            'Authorization': f'Bearer {api_token}',
             'Content-Type': 'application/json'
         }
         
-        # 设置查询参数
-        params = {}
-        if populate_all:
-            params['populate'] = '*'
-        
-        print(f"DEBUG: 正在从 Strapi 获取数据 - URL: {api_url}")
+        print(f"DEBUG: 正在从 Strapi 公开 API 获取数据 - URL: {api_url}")
         print(f"DEBUG: 请求头: {headers}")
-        print(f"DEBUG: 查询参数: {params}")
         
         # 发送请求
-        response = requests.get(api_url, headers=headers, params=params, timeout=30)
+        response = requests.get(api_url, headers=headers, timeout=30)
         
         print(f"DEBUG: Strapi 响应状态码: {response.status_code}")
         print(f"DEBUG: Strapi 响应内容: {response.text[:1000]}...")  # 显示更多内容
         
         if response.status_code == 200:
             data = response.json()
-            items = data.get('data', [])
+            # 公开 API 直接返回数据，不需要 data 包装
+            items = data.get('data', data) if isinstance(data, dict) else data
             
             print(f"DEBUG: 原始数据项数量: {len(items)}")
             if items:
