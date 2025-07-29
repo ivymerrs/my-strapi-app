@@ -15,7 +15,7 @@ services:
       export STRAPI_DISABLE_SWC=true
       export NODE_OPTIONS="--max-old-space-size=4096"
       echo "Building Strapi application..."
-      npm run build
+      STRAPI_DISABLE_SWC=true npm run build
       echo "Checking build results..."
       echo "Current directory: $(pwd)"
       echo "Directory contents:"
