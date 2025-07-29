@@ -409,7 +409,7 @@ def simulate_dialogue():
     if not all([parent_utterance, personality_id, daily_challenge_id]):
         return jsonify({'error': '缺少必要的参数'}), 400
 
-    print(f"DEBUG: 收到 simulate_dialogue 请求 - 父级输入: '{parent_utterance}', 人格ID: {personality_id}, 挑战ID: {daily_challenge_id}")
+    print(f"DEBUG: 收到 simulate_dialogue 请求 - 父级输入: '{parent_utterance}', 人格ID: {personality_id} (类型: {type(personality_id)}), 挑战ID: {daily_challenge_id} (类型: {type(daily_challenge_id)})")
 
     # 根据 ID 从全局缓存中获取名称
     selected_personality_name = None
@@ -418,6 +418,9 @@ def simulate_dialogue():
     # 首先尝试从全局缓存获取
     personalities_data = global_strapi_data_cache.get('personalities', [])
     challenges_data = global_strapi_data_cache.get('daily_challenges', [])
+    
+    print(f"DEBUG: 全局缓存人格数据: {personalities_data}")
+    print(f"DEBUG: 全局缓存挑战数据: {challenges_data}")
     
     # 如果缓存为空，使用硬编码数据
     if not personalities_data:
@@ -437,17 +440,27 @@ def simulate_dialogue():
             {'id': 3, 'name': '情绪管理'},
             {'id': 4, 'name': '注意力不集中'}
         ]
+    
+    print(f"DEBUG: 最终使用的人格数据: {personalities_data}")
+    print(f"DEBUG: 最终使用的挑战数据: {challenges_data}")
 
+    print(f"DEBUG: 开始匹配人格ID: {personality_id}")
     for p in personalities_data:
+        print(f"DEBUG: 检查人格: ID={p.get('id')} (类型: {type(p.get('id'))}), 名称={p.get('name')}")
         if str(p.get('id')) == str(personality_id):
             selected_personality_name = p.get('name')
+            print(f"DEBUG: 找到匹配的人格: {selected_personality_name}")
             break
     
+    print(f"DEBUG: 开始匹配挑战ID: {daily_challenge_id}")
     for c in challenges_data:
+        print(f"DEBUG: 检查挑战: ID={c.get('id')} (类型: {type(c.get('id'))}), 名称={c.get('name')}")
         if str(c.get('id')) == str(daily_challenge_id):
             selected_challenge_name = c.get('name')
+            print(f"DEBUG: 找到匹配的挑战: {selected_challenge_name}")
             break
 
+    print(f"DEBUG: 匹配结果 - 人格: {selected_personality_name}, 挑战: {selected_challenge_name}")
     if not selected_personality_name or not selected_challenge_name:
         return jsonify({'error': '无效的人格或挑战ID'}), 400
 
