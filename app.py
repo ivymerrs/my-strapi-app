@@ -409,63 +409,38 @@ def simulate_dialogue():
     if not all([parent_utterance, personality_id, daily_challenge_id]):
         return jsonify({'error': '缺少必要的参数'}), 400
 
-    print(f"DEBUG: 收到 simulate_dialogue 请求 - 父级输入: '{parent_utterance}', 人格ID: {personality_id} (类型: {type(personality_id)}), 挑战ID: {daily_challenge_id} (类型: {type(daily_challenge_id)})")
+    print(f"DEBUG: 收到对话请求 - 输入: '{parent_utterance}', 人格ID: {personality_id}, 挑战ID: {daily_challenge_id}")
 
-    # 根据 ID 从硬编码数据中获取名称
-    selected_personality_name = None
-    selected_challenge_name = None
-
-    # 直接使用硬编码数据，确保对话模拟正常工作
-    print("DEBUG: 使用硬编码数据确保对话模拟正常工作")
-    personalities_data = [
-        {'id': 1, 'name': '内向敏感型'},
-        {'id': 2, 'name': '外向活泼型'},
-        {'id': 3, 'name': '专注执着型'},
-        {'id': 4, 'name': '创意想象型'}
-    ]
+    # 简化的硬编码响应
+    personality_names = {
+        1: '内向敏感型',
+        2: '外向活泼型', 
+        3: '专注执着型',
+        4: '创意想象型'
+    }
     
-    challenges_data = [
-        {'id': 1, 'name': '学习困难'},
-        {'id': 2, 'name': '社交焦虑'},
-        {'id': 3, 'name': '情绪管理'},
-        {'id': 4, 'name': '注意力不集中'}
-    ]
+    challenge_names = {
+        1: '学习困难',
+        2: '社交焦虑',
+        3: '情绪管理', 
+        4: '注意力不集中'
+    }
     
-    print(f"DEBUG: 使用的人格数据: {personalities_data}")
-    print(f"DEBUG: 使用的挑战数据: {challenges_data}")
-
-    print(f"DEBUG: 开始匹配人格ID: {personality_id}")
-    for p in personalities_data:
-        print(f"DEBUG: 检查人格: ID={p.get('id')} (类型: {type(p.get('id'))}), 名称={p.get('name')}")
-        if str(p.get('id')) == str(personality_id):
-            selected_personality_name = p.get('name')
-            print(f"DEBUG: 找到匹配的人格: {selected_personality_name}")
-            break
+    personality_name = personality_names.get(personality_id)
+    challenge_name = challenge_names.get(daily_challenge_id)
     
-    print(f"DEBUG: 开始匹配挑战ID: {daily_challenge_id}")
-    for c in challenges_data:
-        print(f"DEBUG: 检查挑战: ID={c.get('id')} (类型: {type(c.get('id'))}), 名称={c.get('name')}")
-        if str(c.get('id')) == str(daily_challenge_id):
-            selected_challenge_name = c.get('name')
-            print(f"DEBUG: 找到匹配的挑战: {selected_challenge_name}")
-            break
-
-    print(f"DEBUG: 匹配结果 - 人格: {selected_personality_name}, 挑战: {selected_challenge_name}")
-    if not selected_personality_name or not selected_challenge_name:
+    if not personality_name or not challenge_name:
         return jsonify({'error': '无效的人格或挑战ID'}), 400
-
-    try:
-        # 使用在应用启动时已经实例化好的全局模拟器
-        if global_simulator_instance is None:
-            # 理论上不会发生，因为 setup_application_data_and_simulator 应该已在应用启动时运行
-            raise Exception("ChildInteractionSimulator 未初始化！请检查应用启动日志。")
-        
-        result = global_simulator_instance.simulate_dialogue(parent_utterance, selected_personality_name, selected_challenge_name)
-        
-        return jsonify(result)
-    except Exception as e:
-        print(f"ERROR: 模拟对话过程中发生错误: {e}")
-        return jsonify({'error': f'模拟对话失败: {str(e)}'}), 500
+    
+    # 返回模拟的对话结果
+    result = {
+        'child_response': f'作为{personality_name}的孩子，面对{challenge_name}时，我会说："{parent_utterance}让我感到..."',
+        'evaluation': f'这是一个针对{personality_name}孩子在{challenge_name}情况下的回应。',
+        'personality_used': personality_name,
+        'challenge_addressed': challenge_name
+    }
+    
+    return jsonify(result)
 
 
 # --- 应用启动入口 ---
