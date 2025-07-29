@@ -246,6 +246,20 @@ def test():
 @app.route('/health')
 def health_check():
     """健康检查端点，用于测试应用状态"""
+    global data_initialized
+    
+    # 确保数据已初始化
+    if not data_initialized:
+        print("DEBUG: 健康检查触发数据初始化...")
+        try:
+            setup_application_data_and_simulator()
+            data_initialized = True
+            print("DEBUG: 健康检查数据初始化完成")
+        except Exception as e:
+            print(f"ERROR: 健康检查数据初始化失败: {e}")
+            import traceback
+            print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
+    
     try:
         return jsonify({
             'status': 'healthy',
@@ -253,6 +267,7 @@ def health_check():
             'personalities_count': len(global_strapi_data_cache.get('personalities', [])),
             'daily_challenges_count': len(global_strapi_data_cache.get('daily_challenges', [])),
             'simulator_initialized': global_simulator_instance is not None,
+            'data_initialized': data_initialized,
             'environment_vars': {
                 'STRAPI_URL': 'SET' if os.getenv('STRAPI_URL') else 'NOT_SET',
                 'STRAPI_API_TOKEN': 'SET' if os.getenv('STRAPI_API_TOKEN') else 'NOT_SET',
@@ -260,7 +275,7 @@ def health_check():
             }
         })
     except Exception as e:
-    return jsonify({
+        return jsonify({
             'status': 'unhealthy',
             'error': str(e)
         }), 500
