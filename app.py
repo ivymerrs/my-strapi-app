@@ -415,12 +415,35 @@ def simulate_dialogue():
     selected_personality_name = None
     selected_challenge_name = None
 
-    for p in global_strapi_data_cache['personalities']:
+    # 首先尝试从全局缓存获取
+    personalities_data = global_strapi_data_cache.get('personalities', [])
+    challenges_data = global_strapi_data_cache.get('daily_challenges', [])
+    
+    # 如果缓存为空，使用硬编码数据
+    if not personalities_data:
+        print("DEBUG: 缓存为空，使用硬编码人格数据")
+        personalities_data = [
+            {'id': 1, 'name': '内向敏感型'},
+            {'id': 2, 'name': '外向活泼型'},
+            {'id': 3, 'name': '专注执着型'},
+            {'id': 4, 'name': '创意想象型'}
+        ]
+    
+    if not challenges_data:
+        print("DEBUG: 缓存为空，使用硬编码挑战数据")
+        challenges_data = [
+            {'id': 1, 'name': '学习困难'},
+            {'id': 2, 'name': '社交焦虑'},
+            {'id': 3, 'name': '情绪管理'},
+            {'id': 4, 'name': '注意力不集中'}
+        ]
+
+    for p in personalities_data:
         if str(p.get('id')) == str(personality_id):
             selected_personality_name = p.get('name')
             break
     
-    for c in global_strapi_data_cache['daily_challenges']:
+    for c in challenges_data:
         if str(c.get('id')) == str(daily_challenge_id):
             selected_challenge_name = c.get('name')
             break
