@@ -50,8 +50,12 @@ services:
       - key: STRAPI_ADMIN_BACKEND_URL
         value: "https://my-strapi-app-uaeb.onrender.com"
       - key: ADMIN_JWT_SECRET
-        value: "your-admin-jwt-secret-key-here"
+        value: "m6BLQV97nhFc1yW5LVfsGg=="
       - key: API_TOKEN_SALT
-        value: "your-api-token-salt-here"
+        value: "c6GQp5FuQ2NqCQL5gYDpUw=="
       - key: TRANSFER_TOKEN_SALT
-        value: "your-transfer-token-salt-here" 
+        value: "+W9awzvJVBxLYpNTBZY1Jg=="
+      - key: STRAPI_PUBLIC_API_ENABLED
+        value: "true"
+      - key: STRAPI_PUBLIC_API_PERMISSIONS
+        value: "find,findOne" 
