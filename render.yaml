@@ -9,8 +9,6 @@ services:
       echo "NPM version: $(npm --version)"
       echo "Installing dependencies..."
       npm ci --only=production
-      echo "Installing sharp for Linux..."
-      npm install --include=optional sharp
       echo "Building Strapi application..."
       npm run build
       echo "Build completed!"
@@ -23,10 +21,4 @@ services:
       - key: DATABASE_FILENAME
         value: .tmp/data.db
       - key: NODE_VERSION
-        value: "20"
-      - key: SHARP_IGNORE_GLOBAL_LIBVIPS
-        value: "1"
-      - key: NPM_CONFIG_PLATFORM
-        value: "linux"
-      - key: NPM_CONFIG_ARCH
-        value: "x64" 
+        value: "20" 
