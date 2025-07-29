@@ -3,30 +3,52 @@ services:
     name: my-strapi-app
     env: node
     plan: free
+    nodeVersion: 20.19.4
     buildCommand: |
-      echo "=== Strapi Build with npm ==="
+      echo "=== 使用 Node.js 20.19.4 构建 Strapi ==="
       echo "Node version: $(node --version)"
       echo "NPM version: $(npm --version)"
-      echo "Installing dependencies..."
-      npm ci --only=production
-      echo "Installing sharp for Linux..."
-      npm install --os=linux --cpu=x64 sharp
-      echo "Setting environment variables..."
+      
+      # 设置环境变量
       export STRAPI_DISABLE_SWC=true
       export NODE_OPTIONS="--max-old-space-size=4096"
-      echo "Cleaning previous builds..."
-      rm -rf dist/ .strapi/
-      echo "Building Strapi application..."
-      STRAPI_DISABLE_SWC=true npm run build
-      echo "Checking build results..."
-      echo "Current directory: $(pwd)"
-      echo "Directory contents:"
-      ls -la
-      echo "Dist directory:"
-      ls -la dist/ || echo "dist directory not found"
-      echo "Admin build directory:"
-      ls -la node_modules/@strapi/admin/dist/server/server/build/ || echo "admin build directory not found"
-      echo "Build completed!"
+      export STRAPI_TELEMETRY_DISABLED=true
+      export NODE_ENV=production
+      
+      # 安装依赖
+      echo "安装依赖..."
+      npm ci --only=production
+      
+      # 清理之前的构建
+      echo "清理之前的构建..."
+      rm -rf dist/ .strapi/ build/ node_modules/.cache/
+      
+      # 创建 .swcrc 文件来禁用 SWC
+      echo '{"jsc":{"parser":{"syntax":"typescript","tsx":true},"target":"es2020","loose":false},"module":{"type":"commonjs"},"minify":false}' > .swcrc
+      
+      # 创建 .strapi-updater.json 来禁用更新检查
+      echo '{"disabled":true,"checkUpdate":false}' > .strapi-updater.json
+      
+      # 使用简化的构建命令
+      echo "开始构建..."
+      STRAPI_DISABLE_SWC=true STRAPI_TELEMETRY_DISABLED=true NODE_ENV=production npm run build
+      
+      # 检查构建结果
+      echo "检查构建结果..."
+      if [ -d "dist" ]; then
+        echo "✅ dist 目录存在"
+        ls -la dist/
+        if [ -d "dist/admin" ]; then
+          echo "✅ admin 目录存在"
+          ls -la dist/admin/
+        else
+          echo "❌ admin 目录不存在"
+        fi
+      else
+        echo "❌ dist 目录不存在"
+      fi
+      
+      echo "构建完成！"
     startCommand: npm start
     envVars:
       - key: NODE_ENV

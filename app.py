@@ -314,7 +314,7 @@ def health_check():
                 }
         })
     except Exception as e:
-        return jsonify({
+    return jsonify({
             'status': 'unhealthy',
             'error': str(e)
         }), 500
