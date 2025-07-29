@@ -123,3 +123,4 @@ my-project/
 - 集成阿里云千问 AI 模型
 - 现代化用户界面
 - 详细的评估分析功能
+# Force Render to use latest version
