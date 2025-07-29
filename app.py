@@ -175,14 +175,53 @@ def load_all_required_strapi_data():
     print("--- 正在从 Strapi 加载所有所需数据 (人格、特质表达、情境实例、评估规则) ---")
     try:
         # 加载人格数据
-        global_strapi_data_cache['personalities'] = _get_entity_data_from_strapi("personality-traits", populate_all=True)
+        personalities_data = _get_entity_data_from_strapi("personality-traits", populate_all=True)
+        if not personalities_data:
+            print("DEBUG: Strapi 人格数据为空，使用硬编码数据")
+            personalities_data = [
+                {'id': 1, 'name': '内向敏感型'},
+                {'id': 2, 'name': '外向活泼型'},
+                {'id': 3, 'name': '专注执着型'},
+                {'id': 4, 'name': '创意想象型'}
+            ]
+        global_strapi_data_cache['personalities'] = personalities_data
+        
         # 加载特质表达数据（API ID: trait-expression）
-        global_strapi_data_cache['trait_expressions'] = _get_entity_data_from_strapi("trait-expressions", populate_all=True)
+        trait_expressions_data = _get_entity_data_from_strapi("trait-expressions", populate_all=True)
+        if not trait_expressions_data:
+            print("DEBUG: Strapi 特质表达数据为空，使用硬编码数据")
+            trait_expressions_data = [
+                {'id': 1, 'name': '内向敏感型表达', 'personality_id': 1},
+                {'id': 2, 'name': '外向活泼型表达', 'personality_id': 2},
+                {'id': 3, 'name': '专注执着型表达', 'personality_id': 3},
+                {'id': 4, 'name': '创意想象型表达', 'personality_id': 4}
+            ]
+        global_strapi_data_cache['trait_expressions'] = trait_expressions_data
+        
         # 加载情境实例数据（API ID: dialogue-scenario）
-        global_strapi_data_cache['scenario_instances'] = _get_entity_data_from_strapi("dialogue-scenarios", populate_all=True)
+        scenario_instances_data = _get_entity_data_from_strapi("dialogue-scenarios", populate_all=True)
+        if not scenario_instances_data:
+            print("DEBUG: Strapi 情境实例数据为空，使用硬编码数据")
+            scenario_instances_data = [
+                {'id': 1, 'name': '学习困难场景', 'daily_challenge_id': 1},
+                {'id': 2, 'name': '社交焦虑场景', 'daily_challenge_id': 2},
+                {'id': 3, 'name': '情绪管理场景', 'daily_challenge_id': 3},
+                {'id': 4, 'name': '注意力不集中场景', 'daily_challenge_id': 4}
+            ]
+        global_strapi_data_cache['scenario_instances'] = scenario_instances_data
+        
         # 【新增】加载日常挑战
-        global_strapi_data_cache['daily_challenges'] = _get_entity_data_from_strapi("daily-challenges", populate_all=True)
-        # 加载评估规则（假设之前 load_evaluation_rules_from_strapi 已经处理了 'responses'）
+        daily_challenges_data = _get_entity_data_from_strapi("daily-challenges", populate_all=True)
+        if not daily_challenges_data:
+            print("DEBUG: Strapi 日常挑战数据为空，使用硬编码数据")
+            daily_challenges_data = [
+                {'id': 1, 'name': '学习困难'},
+                {'id': 2, 'name': '社交焦虑'},
+                {'id': 3, 'name': '情绪管理'},
+                {'id': 4, 'name': '注意力不集中'}
+            ]
+        global_strapi_data_cache['daily_challenges'] = daily_challenges_data
+        
         print("--- 成功加载所有所需数据 ---")
         
         # --- 添加这些打印语句 ---

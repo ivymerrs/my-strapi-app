@@ -14,6 +14,8 @@ services:
       echo "Setting environment variables..."
       export STRAPI_DISABLE_SWC=true
       export NODE_OPTIONS="--max-old-space-size=4096"
+      echo "Cleaning previous builds..."
+      rm -rf dist/ .strapi/
       echo "Building Strapi application..."
       STRAPI_DISABLE_SWC=true npm run build
       echo "Checking build results..."
@@ -22,6 +24,8 @@ services:
       ls -la
       echo "Dist directory:"
       ls -la dist/ || echo "dist directory not found"
+      echo "Admin build directory:"
+      ls -la node_modules/@strapi/admin/dist/server/server/build/ || echo "admin build directory not found"
       echo "Build completed!"
     startCommand: npm start
     envVars:

@@ -1,7 +1,9 @@
 {
-  "isUpdating": false,
-  "lastUpdateCheck": "2025-07-29T03:30:00.000Z",
-  "config": {
-    "swc": false
-  }
+	"isUpdating": false,
+	"lastUpdateCheck": 1753776404053,
+	"config": {
+		"swc": false
+	},
+	"latest": "5.19.0",
+	"lastNotification": 1753776452686
 }
