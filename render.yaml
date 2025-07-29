@@ -3,7 +3,7 @@ services:
     name: my-strapi-app
     env: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: chmod +x .render-build.sh && ./.render-build.sh
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -11,4 +11,6 @@ services:
       - key: DATABASE_CLIENT
         value: sqlite
       - key: DATABASE_FILENAME
-        value: .tmp/data.db 
+        value: .tmp/data.db
+      - key: NPM_CONFIG_PACKAGE_LOCK_ONLY
+        value: "true" 
