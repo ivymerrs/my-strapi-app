@@ -8,4 +8,4 @@ process.env.STRAPI_DISABLE_PERMISSIONS = 'true';
 const strapi = require('@strapi/strapi');
 
 // Start Strapi
-strapi.start(); 
+strapi().start(); 
