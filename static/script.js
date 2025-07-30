@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 移除不再需要的元素引用，因为新的 HTML 结构更简化
 
     // API Endpoint (确保 Flask 服务器正在运行在 5000 端口)
-    const API_URL = 'http://127.0.0.1:5000/simulate_dialogue';
+    const API_URL = '/simulate_dialogue';
 
     // 新增：加载人格列表
     fetch('/get_personalities')
