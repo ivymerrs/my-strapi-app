@@ -38,11 +38,11 @@ services:
       if [ -d "dist" ]; then
         echo "✅ dist 目录存在"
         ls -la dist/
-        if [ -d "dist/admin" ]; then
-          echo "✅ admin 目录存在"
-          ls -la dist/admin/
+        if [ -d "dist/config" ]; then
+          echo "✅ config 目录存在"
+          ls -la dist/config/
         else
-          echo "❌ admin 目录不存在"
+          echo "❌ config 目录不存在"
         fi
       else
         echo "❌ dist 目录不存在"
@@ -53,10 +53,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_CLIENT
-        value: sqlite
-      - key: DATABASE_FILENAME
-        value: .tmp/data.db
       - key: NODE_VERSION
         value: "20"
       - key: STRAPI_DISABLE_UPLOAD
@@ -88,4 +84,13 @@ services:
       - key: STRAPI_PUBLIC_ACCESS
         value: "true"
       - key: STRAPI_DISABLE_PERMISSIONS
-        value: "true" 
+        value: "true"
+      # PostgreSQL 数据库配置（需要在 Render 控制台中设置 DATABASE_URL）
+      - key: DATABASE_SSL
+        value: "true"
+      - key: DATABASE_SSL_REJECT_UNAUTHORIZED
+        value: "false"
+      - key: DATABASE_POOL_MIN
+        value: "0"
+      - key: DATABASE_POOL_MAX
+        value: "10" 
