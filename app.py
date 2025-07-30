@@ -282,6 +282,11 @@ def test():
         'timestamp': str(datetime.now())
     })
 
+@app.route('/test-frontend')
+def test_frontend():
+    """前端测试页面"""
+    return render_template('test_frontend.html')
+
 @app.route('/health')
 def health_check():
     """健康检查端点，用于测试应用状态"""
@@ -314,7 +319,7 @@ def health_check():
                 }
         })
     except Exception as e:
-    return jsonify({
+        return jsonify({
             'status': 'unhealthy',
             'error': str(e)
         }), 500

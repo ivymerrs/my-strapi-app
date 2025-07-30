@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端测试页面</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; }
+        .result { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>前端 API 测试</h1>
+    
+    <div class="test-section">
+        <h2>1. 测试健康检查</h2>
+        <button onclick="testHealth()">测试健康检查</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. 测试获取人格数据</h2>
+        <button onclick="testPersonalities()">测试人格数据</button>
+        <div id="personalities-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. 测试获取挑战数据</h2>
+        <button onclick="testChallenges()">测试挑战数据</button>
+        <div id="challenges-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. 测试对话模拟</h2>
+        <button onclick="testDialogue()">测试对话模拟</button>
+        <div id="dialogue-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ 健康检查成功</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 健康检查失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testPersonalities() {
+            const resultDiv = document.getElementById('personalities-result');
+            try {
+                const response = await fetch('/get_personalities');
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ 人格数据获取成功</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 人格数据获取失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testChallenges() {
+            const resultDiv = document.getElementById('challenges-result');
+            try {
+                const response = await fetch('/get_daily_challenges');
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ 挑战数据获取成功</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 挑战数据获取失败: ${error.message}</div>`;
+            }
+        }
+        
+        async function testDialogue() {
+            const resultDiv = document.getElementById('dialogue-result');
+            try {
+                const response = await fetch('/simulate_dialogue', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        parent_utterance: "你今天在学校怎么样？",
+                        personality_id: 2,
+                        daily_challenge_id: 2
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP 错误！状态码: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ 对话模拟成功</div><pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ 对话模拟失败: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 
