@@ -536,28 +536,28 @@ class ChildInteractionSimulator:
                 prompt_parts.append(f"请特别注意后续对话的微调提示：{matched_follow_up_hint}")
             return "\n".join(prompt_parts)
         else:
-        prompt = f"""
-            你是一个模拟孩子。
-            你的性格特征是：{self.personality_desc}
-            你的核心需求是：{self.personality_core_need}
-            你的关键行为模式包括：
-            {personality_key_chars_str}
+            prompt = f"""
+                你是一个模拟孩子。
+                你的性格特征是：{self.personality_desc}
+                你的核心需求是：{self.personality_core_need}
+                你的关键行为模式包括：
+                {personality_key_chars_str}
 
-            当前情境是：“{self.scenario_name}”
-            情境描述：{self.scenario_desc}
-            在这个情境下，孩子通常的表现是：{child_behaviors_str}
-            家长此刻可能感到：{parent_emotions_str}
-            可能的根本原因包括：{root_causes_str}
+                当前情境是："{self.scenario_name}"
+                情境描述：{self.scenario_desc}
+                在这个情境下，孩子通常的表现是：{child_behaviors_str}
+                家长此刻可能感到：{parent_emotions_str}
+                可能的根本原因包括：{root_causes_str}
 
-            请你作为【{self.personality_name}】这个孩子，结合你的性格特征、核心需求和当前情境的详细信息，以及以下通用指导，给出自然、真实的回复。回复要符合孩子的年龄特点和情绪状态。
-            
-            通用回复指导：{self.general_response_guidance}
+                请你作为【{self.personality_name}】这个孩子，结合你的性格特征、核心需求和当前情境的详细信息，以及以下通用指导，给出自然、真实的回复。回复要符合孩子的年龄特点和情绪状态。
+                
+                通用回复指导：{self.general_response_guidance}
 
-            家长对你说：“{parent_input}”
+                家长对你说："{parent_input}"
 
-            你的回复：
-        """
-        return prompt
+                你的回复：
+            """
+            return prompt
 
     def _call_llm(self, prompt_type: str, prompt_content: str):
         return call_llm_placeholder(prompt_type, prompt_content)
