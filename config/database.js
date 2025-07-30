@@ -25,21 +25,16 @@ module.exports = ({ env }) => {
   if (isProduction) {
     return {
       connection: {
-        client: 'postgres',
+        client: 'pg', // 使用 'pg' 而不是 'postgres'
         connection: {
           // 使用 Render 提供的 Internal Database URL
           connectionString: env('DATABASE_URL'),
-          // 备用连接参数（如果 DATABASE_URL 不可用）
-          host: env('DATABASE_HOST', 'localhost'),
-          port: env.int('DATABASE_PORT', 5432),
-          database: env('DATABASE_NAME', 'strapi'),
-          user: env('DATABASE_USERNAME', 'strapi'),
-          password: env('DATABASE_PASSWORD', 'strapi'),
+          // 如果需要 SSL 连接
           ssl: env.bool('DATABASE_SSL', false) && {
             rejectUnauthorized: env.bool('DATABASE_SSL_REJECT_UNAUTHORIZED', false),
           },
-          schema: env('DATABASE_SCHEMA', 'public'),
         },
+        // 数据库连接池配置
         pool: {
           min: env.int('DATABASE_POOL_MIN', 0),
           max: env.int('DATABASE_POOL_MAX', 10),

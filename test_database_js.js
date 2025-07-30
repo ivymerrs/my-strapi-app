@@ -57,8 +57,8 @@ try {
   const prodConfig = require('./config/database.js')({ env: prodEnv });
   console.log('生产环境配置:', JSON.stringify(prodConfig, null, 2));
   
-  if (prodConfig.connection.client === 'postgres') {
-    console.log('✅ 生产环境正确配置为 PostgreSQL');
+  if (prodConfig.connection.client === 'pg') {
+    console.log('✅ 生产环境正确配置为 PostgreSQL (pg)');
   } else {
     console.log('❌ 生产环境配置错误');
   }
