@@ -1,44 +1,249 @@
- /* my-project/static/style.css */
+/* 微信聊天界面样式 */
 
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f4f4f4;
-    color: #333;
+/* 基础样式 */
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #f0f2f5;
 }
 
-.container {
-    max-width: 800px;
+/* 聊天容器 */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 600px;
     margin: 0 auto;
-    background-color: #fff;
-    padding: 20px;
+    border: 1px solid #e0e0e0;
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    background-color: #fff;
+    overflow: hidden;
 }
 
-h1 {
-    color: #0056b3;
+/* 聊天头部 */
+.chat-header {
+    padding: 15px;
+    background-color: #fff;
+    border-bottom: 1px solid #e0e0e0;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 聊天消息区域 */
+.chat-box {
+    flex-grow: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 消息样式 */
+.message {
+    display: flex;
+    align-items: flex-start;
+}
+
+.parent-message {
+    justify-content: flex-end;
+}
+
+.child-message {
+    justify-content: flex-start;
+}
+
+/* 消息气泡样式 */
+.parent-message .bubble {
+    background-color: #007bff;
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.child-message .bubble {
+    background-color: #e5e5ea;
+    color: black;
+    border-bottom-left-radius: 4px;
+}
+
+.bubble {
+    max-width: 70%;
+    padding: 12px 18px;
+    border-radius: 20px;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    line-height: 1.4;
+}
+
+/* 输入区域 */
+.input-area {
+    display: flex;
+    padding: 10px;
+    background-color: #fff;
+    border-top: 1px solid #e0e0e0;
+}
+
+.input-area textarea {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 20px;
+    margin-right: 10px;
+    resize: none;
+    height: 40px;
+    line-height: 20px;
+}
+
+.input-area button {
+    padding: 10px 20px;
+    border: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.input-area button:hover {
+    background-color: #0056b3;
+}
+
+/* 隐藏旧的加载动画 */
+.spinner { 
+    display: none !important; 
+}
+
+/* 加载提示样式 */
+.loading-message {
+    text-align: center;
+    font-style: italic;
+    color: #888;
+}
+
+/* 专家指导按钮样式 */
+.guidance-btn {
+    background-color: #28a745;
+}
+
+.guidance-btn:hover {
+    background-color: #218838;
+}
+
+/* 评分标签样式 */
+.score-tag {
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-left: 10px;
+    align-self: center;
+    white-space: nowrap;
+}
+
+.score-a { 
+    background-color: #28a745; 
+    color: white; 
+}
+
+.score-b { 
+    background-color: #ffc107; 
+    color: black; 
+}
+
+.score-c { 
+    background-color: #dc3545; 
+    color: white; 
+}
+
+/* 初始设置界面 */
+.initial-setup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255,255,255,0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.input-section {
+    margin-bottom: 20px;
     text-align: center;
 }
 
-.message {
-    padding: 8px 12px;
-    margin-bottom: 10px;
-    border-radius: 5px;
+.input-section label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
 }
 
-.parent {
-    background-color: #e0f7fa;
-    text-align: right;
+.input-section select {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    min-width: 200px;
 }
 
-.child {
-    background-color: #e8f5e9;
-    text-align: left;
+#start-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
 }
 
-.system {
-    background-color: #ffe0b2;
-    color: #6d4c41;
-    font-style: italic;
+#start-btn:hover {
+    background-color: #0056b3;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .chat-container {
+        max-width: 100%;
+        border-radius: 0;
+        border: none;
+    }
+    
+    .chat-header {
+        padding: 10px;
+        font-size: 1rem;
+    }
+    
+    .chat-box {
+        padding: 15px;
+    }
+    
+    .bubble {
+        max-width: 85%;
+    }
+    
+    .input-area {
+        padding: 8px;
+    }
+    
+    .input-area textarea {
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    
+    .input-area button {
+        padding: 8px 15px;
+        font-size: 0.9rem;
+    }
 }

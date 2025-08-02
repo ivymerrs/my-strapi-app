@@ -1,461 +1,431 @@
 # my-project/app.py
-
-from flask import Flask, render_template, request, jsonify, g
+import os
+import json
 import requests
 import random
-import os
-from datetime import datetime
-from child_main import ChildInteractionSimulator
-from flask_cors import CORS # 确保已安装 pip install Flask-Cors
-from dotenv import load_dotenv
-load_dotenv()
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
+import sys
 
-# --- Flask 应用初始化 ---
-app = Flask(__name__, template_folder='templates', static_folder='static')
-CORS(app) # 启用 CORS
+app = Flask(__name__)
+CORS(app)
 
-# --- 在第一次请求时初始化数据 ---
-@app.before_request
-def initialize_data_on_first_request():
-    global data_initialized
-    if not data_initialized:
-        print("DEBUG: 第一次请求，开始初始化数据...")
+# 设置静态文件缓存控制
+@app.after_request
+def add_header(response):
+    if 'Cache-Control' not in response.headers:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    return response
+
+# 全局数据缓存
+global_strapi_data_cache = {}
+
+# 确保在生产环境中从环境变量中获取 API 密钥
+ALIYUN_DASHSCOPE_API_KEY = os.environ.get("ALIYUN_DASHSCOPE_API_KEY", "")
+STRAPI_API_URL = os.environ.get("STRAPI_API_URL", "http://localhost:1337")
+
+
+class ChildInteractionSimulator:
+    def __init__(self, personalities, trait_expressions, scenario_instances, daily_challenges, evaluation_rules):
+        self.personalities = personalities
+        self.trait_expressions = trait_expressions
+        self.scenario_instances = scenario_instances
+        self.daily_challenges = daily_challenges
+        self.evaluation_rules = evaluation_rules
+        self.qwen_model_name = "qwen-turbo"
+        self.api_key = ALIYUN_DASHSCOPE_API_KEY
+
+    def _get_entity_data_from_strapi(self, entity_name):
+        """从 Strapi API 获取数据，并增加错误处理"""
+        url = f"{STRAPI_API_URL}/api/{entity_name}?populate=*"
+        print(f"DEBUG: 尝试从 {url} 获取数据...")
         try:
-            setup_application_data_and_simulator()
-            data_initialized = True
-            print("DEBUG: 数据初始化完成")
-        except Exception as e:
-            print(f"ERROR: 数据初始化失败: {e}")
-            import traceback
-            print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
-
-# --- 全局变量：用于存储模拟器实例和 Strapi 数据缓存 ---
-global_simulator_instance = None # 存储 ChildInteractionSimulator 的一个实例
-
-# --- 全局变量：数据初始化标志 ---
-data_initialized = False
-global_strapi_data_cache = {
-    'personalities': [],
-    'trait_expressions': [],
-    'scenario_instances': [], # 具体的场景
-    'daily_challenges': [], # 【新增】大主题挑战
-    'evaluation_rules': []
-}
-
-# --- 全局变量：评估规则缓存 ---
-EVALUATION_RULES_CACHE = []
-
-# --- 全局变量：阿里云 DashScope API 配置 ---
-ALIYUN_DASHSCOPE_API_KEY = os.getenv('ALIYUN_DASHSCOPE_API_KEY')
-if not ALIYUN_DASHSCOPE_API_KEY:
-    print("警告: 未设置 ALIYUN_DASHSCOPE_API_KEY 环境变量。LLM 功能可能无法工作。")
-
-# --- 辅助函数：从 Strapi 获取数据 ---
-# 这个函数应该在所有需要使用它的函数之前定义
-def _get_entity_data_from_strapi(api_uid, populate_all=False):
-    """从 Strapi 获取指定 API 的数据"""
-    try:
-        # 获取环境变量
-        strapi_url = os.getenv('STRAPI_URL')
-        
-        print(f"DEBUG: STRAPI_URL = {strapi_url}")
-        
-        if not strapi_url:
-            print("ERROR: STRAPI_URL 未设置")
-            return []
-
-        # 构建请求 URL - 使用公开 API
-        base_url = strapi_url.rstrip('/')
-        
-        # 根据 API UID 映射到公开 API 端点
-        api_mapping = {
-            'core-needs': 'public/core-needs',
-            'personality-traits': 'public/personality-traits',
-            'dialogue-scenarios': 'public/dialogue-scenarios',
-            'ideal-responses': 'public/ideal-responses',
-            'responses': 'public/responses',
-            'trait-expressions': 'public/trait-expressions',
-            'daily-challenges': 'public/daily-challenges'
-        }
-        
-        # 如果没有映射，使用默认的公开 API 格式
-        if api_uid in api_mapping:
-            api_url = f"{base_url}/api/{api_mapping[api_uid]}"
-        else:
-            api_url = f"{base_url}/api/public/{api_uid}"
-        
-        # 设置请求头 - 公开 API 不需要认证
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        
-        print(f"DEBUG: 正在从 Strapi 公开 API 获取数据 - URL: {api_url}")
-        print(f"DEBUG: 请求头: {headers}")
-        
-        # 发送请求
-        response = requests.get(api_url, headers=headers, timeout=30)
-        
-        print(f"DEBUG: Strapi 响应状态码: {response.status_code}")
-        print(f"DEBUG: Strapi 响应内容: {response.text[:1000]}...")  # 显示更多内容
-        
-        if response.status_code == 200:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
             data = response.json()
-            # 公开 API 直接返回数据，不需要 data 包装
-            items = data.get('data', data) if isinstance(data, dict) else data
-            
-            print(f"DEBUG: 原始数据项数量: {len(items)}")
-            if items:
-                print(f"DEBUG: 第一个数据项示例: {items[0]}")
-            
-            # 提取和扁平化数据
-            extracted_items = []
-            for item in items:
-                print(f"DEBUG: 处理数据项: {item}")
-                extracted_item = {'id': item.get('id')}
-                # 将 attributes 中的所有字段直接提取到顶层
-                if 'attributes' in item:
-                    print(f"DEBUG: 找到 attributes: {item['attributes']}")
-                    for key, value in item['attributes'].items():
-                        if key != 'id':  # 避免重复
-                            extracted_item[key] = value
-                else:
-                    print(f"DEBUG: 没有找到 attributes，直接使用顶层字段")
-                    # 如果没有 attributes，直接使用顶层字段
-                    for key, value in item.items():
-                        if key != 'id':  # 避免重复
-                            extracted_item[key] = value
-                extracted_items.append(extracted_item)
-            
-            print(f"DEBUG: 成功提取 {len(extracted_items)} 条数据")
-            if extracted_items:
-                print(f"DEBUG: 第一个提取项示例: {extracted_items[0]}")
-            return extracted_items
-        else:
-            print(f"ERROR: Strapi API 请求失败，状态码: {response.status_code}")
-            print(f"ERROR: 错误响应: {response.text}")
-            return []
-            
-    except Exception as e:
-        print(f"ERROR: 从 Strapi 获取数据时发生异常: {e}")
-        import traceback
-        print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
+            return data.get('data', [])
+        except requests.exceptions.Timeout:
+            print(f"ERROR: 从 Strapi 获取 {entity_name} 数据超时。")
+        except requests.exceptions.ConnectionError as e:
+            print(f"ERROR: 无法连接到 Strapi 服务器，请检查 Strapi 是否已运行在 {STRAPI_API_URL}。错误: {e}")
+        except requests.exceptions.RequestException as e:
+            print(f"ERROR: 从 Strapi 获取 {entity_name} 数据失败。错误: {e}")
         return []
 
-# --- 加载评估规则 ---
-def load_evaluation_rules_from_strapi():
-    global EVALUATION_RULES_CACHE
-    try:
-        # 确保 populate=* 获取所有关系字段，特别是 applies_to_personality/challenge/scenario 的 name
-        rules_data = _get_entity_data_from_strapi("responses", populate_all=True)
-        
-        parsed_rules = []
-        for rule_entry in rules_data:
-            attrs = rule_entry.get('attributes', {})
-            rule = {
-                'id': rule_entry.get('id'),
-                'rulename': attrs.get('rulename'),
-                'parent_keywords': attrs.get('parent_keywords', []), # 假设现在是JSON Array，直接解析为Python list
-                'evaluation_grade': attrs.get('evaluation_grade'),
-                'reason_analysis': attrs.get('reason_analysis'),
-                'suggestion_encouragement': attrs.get('suggestion_encouragement'), # 新增字段
-                'applies_to_personality_name': attrs.get('applies_to_personality', {}).get('data', {}).get('attributes', {}).get('name') if attrs.get('applies_to_personality') and attrs.get('applies_to_personality').get('data') else None,
-                'applies_to_challenge_name': attrs.get('applies_to_challenge', {}).get('data', {}).get('attributes', {}).get('name') if attrs.get('applies_to_challenge') and attrs.get('applies_to_challenge').get('data') else None,
-                'applies_to_scenario_name': attrs.get('applies_to_scenario', {}).get('data', {}).get('attributes', {}).get('name') if attrs.get('applies_to_scenario') and attrs.get('applies_to_scenario').get('data') else None,
+    def _call_qwen_model(self, prompt_messages):
+        """封装调用阿里云通义千问模型的逻辑，增加错误处理"""
+        if not self.api_key:
+            print("ERROR: ALIYUN_DASHSCOPE_API_KEY 未设置。", file=sys.stderr)
+            return None
+
+        try:
+            headers = {
+                'Authorization': f'Bearer {self.api_key}',
+                'Content-Type': 'application/json'
             }
-            parsed_rules.append(rule)
-        EVALUATION_RULES_CACHE = parsed_rules
-        print(f"--- 成功从 Strapi 加载并缓存 {len(EVALUATION_RULES_CACHE)} 条评估规则 ---")
-    except Exception as e: # 捕获更广泛的异常，包括解析错误
-        print(f"ERROR: 无法从Strapi加载或解析评估规则: {e}")
-        EVALUATION_RULES_CACHE = []
+            payload = {
+                "model": self.qwen_model_name,
+                "input": {
+                    "messages": prompt_messages
+                },
+                "parameters": {
+                    "result_format": "message"
+                }
+            }
+            response = requests.post('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', headers=headers, json=payload, timeout=20)
+            response.raise_for_status()
+            result = response.json()
+            return result['output']['choices'][0]['message']['content']
+        except requests.exceptions.RequestException as e:
+            print(f"ERROR: 调用大模型失败。请检查 API 密钥是否有效或网络连接。错误: {e}", file=sys.stderr)
+        except (KeyError, IndexError) as e:
+            print(f"ERROR: 大模型返回的数据格式不正确。错误: {e}", file=sys.stderr)
+        return None
 
-# --- 加载所有模拟器所需数据 (人格、特质表达、情境实例) ---
-def load_all_required_strapi_data():
-    global global_strapi_data_cache
-    print("--- 正在从 Strapi 加载所有所需数据 (人格、特质表达、情境实例、评估规则) ---")
-    try:
-        # 加载人格数据
-        personalities_data = _get_entity_data_from_strapi("personality-traits", populate_all=True)
-        if not personalities_data:
-            print("DEBUG: Strapi 人格数据为空，使用硬编码数据")
-            personalities_data = [
-                {'id': 1, 'name': '内向敏感型'},
-                {'id': 2, 'name': '外向活泼型'},
-                {'id': 3, 'name': '专注执着型'},
-                {'id': 4, 'name': '创意想象型'}
-            ]
-        global_strapi_data_cache['personalities'] = personalities_data
-        
-        # 加载特质表达数据（API ID: trait-expression）
-        trait_expressions_data = _get_entity_data_from_strapi("trait-expressions", populate_all=True)
-        if not trait_expressions_data:
-            print("DEBUG: Strapi 特质表达数据为空，使用硬编码数据")
-            trait_expressions_data = [
-                {'id': 1, 'name': '内向敏感型表达', 'personality_id': 1},
-                {'id': 2, 'name': '外向活泼型表达', 'personality_id': 2},
-                {'id': 3, 'name': '专注执着型表达', 'personality_id': 3},
-                {'id': 4, 'name': '创意想象型表达', 'personality_id': 4}
-            ]
-        global_strapi_data_cache['trait_expressions'] = trait_expressions_data
-        
-        # 加载情境实例数据（API ID: dialogue-scenario）
-        scenario_instances_data = _get_entity_data_from_strapi("dialogue-scenarios", populate_all=True)
-        if not scenario_instances_data:
-            print("DEBUG: Strapi 情境实例数据为空，使用硬编码数据")
-            scenario_instances_data = [
-                {'id': 1, 'name': '学习困难场景', 'daily_challenge_id': 1},
-                {'id': 2, 'name': '社交焦虑场景', 'daily_challenge_id': 2},
-                {'id': 3, 'name': '情绪管理场景', 'daily_challenge_id': 3},
-                {'id': 4, 'name': '注意力不集中场景', 'daily_challenge_id': 4}
-            ]
-        global_strapi_data_cache['scenario_instances'] = scenario_instances_data
-        
-        # 【新增】加载日常挑战
-        daily_challenges_data = _get_entity_data_from_strapi("daily-challenges", populate_all=True)
-        if not daily_challenges_data:
-            print("DEBUG: Strapi 日常挑战数据为空，使用硬编码数据")
-            daily_challenges_data = [
-                {'id': 1, 'name': '学习困难'},
-                {'id': 2, 'name': '社交焦虑'},
-                {'id': 3, 'name': '情绪管理'},
-                {'id': 4, 'name': '注意力不集中'}
-            ]
-        global_strapi_data_cache['daily_challenges'] = daily_challenges_data
-        
-        print("--- 成功加载所有所需数据 ---")
-        
-        # --- 添加这些打印语句 ---
-        print("\n--- DEBUG: Cache Contents After Setup ---")
-        print(f"Personalities loaded: {len(global_strapi_data_cache['personalities'])} items")
-        if global_strapi_data_cache['personalities']:
-            print(f"First personality item: {global_strapi_data_cache['personalities'][0]}")
-        
-        print(f"Trait Expressions loaded: {len(global_strapi_data_cache['trait_expressions'])} items")
-        if global_strapi_data_cache['trait_expressions']:
-            print(f"First trait expression item: {global_strapi_data_cache['trait_expressions'][0]}")
+    def _generate_child_response_with_qwen(self, parent_input, selected_personality, selected_scenario):
+        """根据人格和情境生成孩子的回应"""
+        try:
+            # 处理人格数据
+            if 'attributes' in selected_personality:
+                personality_name = selected_personality['attributes']['name']
+                personality_desc = selected_personality['attributes']['description']
+            else:
+                personality_name = selected_personality.get('name', '未知人格')
+                personality_desc = selected_personality.get('description', '')
             
-        print(f"Scenario Instances loaded: {len(global_strapi_data_cache['scenario_instances'])} items")
-        if global_strapi_data_cache['scenario_instances']:
-            print(f"First scenario instance item: {global_strapi_data_cache['scenario_instances'][0]}")
+            # 处理情境数据
+            if 'attributes' in selected_scenario:
+                scenario_name = selected_scenario['attributes']['name']
+                scenario_desc = selected_scenario['attributes']['description']
+            else:
+                scenario_name = selected_scenario.get('name', '默认情境')
+                scenario_desc = selected_scenario.get('description', '')
+
+            prompt_messages = [
+                {"role": "system", "content": f"你正在扮演一个拥有人格特质为'{personality_name}'的孩子。他的特质是：'{personality_desc}'。当前情境是：'{scenario_name}'，情境描述：'{scenario_desc}'。请根据这些信息，给出一个符合孩子身份的回应，并保持简短。"},
+                {"role": "user", "content": parent_input}
+            ]
+            return self._call_qwen_model(prompt_messages)
+        except Exception as e:
+            print(f"ERROR: 生成孩子回应失败: {e}", file=sys.stderr)
+            return "对不起，我现在有点困惑，能请你再说一遍吗？"
+
+    def _evaluate_response(self, parent_input, child_response, selected_personality, selected_scenario):
+        """评估家长输入，并返回包含评分、分值和情绪分析的结构化数据。"""
+        # 处理人格数据
+        if 'attributes' in selected_personality:
+            personality_name = selected_personality['attributes']['name']
+            personality_desc = selected_personality['attributes']['description']
+        else:
+            personality_name = selected_personality.get('name', '未知人格')
+            personality_desc = selected_personality.get('description', '')
+        
+        # 处理情境数据
+        if 'attributes' in selected_scenario:
+            scenario_name = selected_scenario['attributes']['name']
+            scenario_desc = selected_scenario['attributes']['description']
+        else:
+            scenario_name = selected_scenario.get('name', '默认情境')
+            scenario_desc = selected_scenario.get('description', '')
+
+        evaluation_prompt_messages = [
+            {"role": "system", "content": "你是一个专业的亲子沟通AI，请根据家长和孩子的对话，分析家长的沟通方式并给出评价。"},
+            {"role": "user", "content": f"""
+            当前情境名称: {scenario_name}
+            情境描述: {scenario_desc}
+            孩子的人格特质名称: {personality_name}
+            孩子的人格特质描述: {personality_desc}
             
-        print(f"Daily Challenges loaded: {len(global_strapi_data_cache['daily_challenges'])} items")
-        if global_strapi_data_cache['daily_challenges']:
-            print(f"First daily challenge item: {global_strapi_data_cache['daily_challenges'][0]}")
-        print("--- END DEBUG Cache Contents ---\n")
-        # --- 结束添加的打印语句 ---
-    except Exception as e:
-        print(f"ERROR: 无法从Strapi加载所有所需数据: {e}")
-        raise
+            家长说: "{parent_input}"
+            孩子回应: "{child_response}"
+            
+            请从以下几个方面进行分析，并以JSON格式返回，不要有其他任何文字。
+            1. **grade**: 根据家长的沟通效果，给出A (优秀), B (良好), 或 C (有待改进)的评级。
+            2. **score**: 给出一个具体的数字分数，A=10, B=5, C=-5。
+            3. **reasonAnalysis**: 简要分析给这个评级的原因。
+            4. **suggestionEncouragement**: 给出具体的沟通建议或鼓励的话语。
+            5. **parent_mood**: 分析家长的输入情绪，是'positive' (积极), 'neutral' (中性), 还是'negative' (负面)。
+            """}
+        ]
+        
+        try:
+            llm_response = self._call_qwen_model(evaluation_prompt_messages)
+            evaluation_data = json.loads(llm_response)
+            return evaluation_data
+        except json.JSONDecodeError as e:
+            print(f"ERROR: 大模型返回的JSON格式不正确。错误: {e}. 原始回应: {llm_response}", file=sys.stderr)
+            return {
+                "grade": "C",
+                "score": -5,
+                "reasonAnalysis": "AI评价系统出错，无法解析大模型回应。",
+                "suggestionEncouragement": "请重试或检查后端日志。",
+                "parent_mood": "unknown"
+            }
 
-# --- 应用启动时初始化所有数据和模拟器实例的函数 ---
-def setup_application_data_and_simulator():
-    global global_simulator_instance
-    
-    # 1. 加载所有 Strapi 数据（包括模拟器和评估规则所需的）
-    load_all_required_strapi_data()
-    load_evaluation_rules_from_strapi() # 单独调用，因为 EVALUATION_RULES_CACHE 是独立的
+    def _generate_expert_guidance(self, dialogue_log, selected_personality):
+        """根据完整的对话历史生成专家指导"""
+        try:
+            personality_name = selected_personality.get('attributes', {}).get('name', '未知人格')
+            
+            formatted_dialogue = "\n".join([
+                f"家长说: \"{d.get('parent_input', '')}\"\n孩子回应: \"{d.get('child_response', '')}\"\n评价: {d.get('evaluation', {}).get('reasonAnalysis', '无评价')}"
+                for d in dialogue_log
+            ])
 
-    # 2. 实例化 ChildInteractionSimulator
-    try:
-        global_simulator_instance = ChildInteractionSimulator(
-            personality_data=global_strapi_data_cache['personalities'],
-            trait_expression_data=global_strapi_data_cache['trait_expressions'],
-            scenario_instance_data=global_strapi_data_cache['scenario_instances'],
-            daily_challenges_data=global_strapi_data_cache['daily_challenges']
-        )
-        print("--- ChildInteractionSimulator 实例化成功 ---")
-    except Exception as e:
-        print(f"ERROR: ChildInteractionSimulator 实例化失败: {e}")
-        raise # 重新抛出异常以阻止应用在模拟器无法实例化时运行
+            guidance_prompt_messages = [
+                {"role": "system", "content": "你是一个专业的亲子沟通专家，请根据以下对话历史，给家长提供一份全面而有针对性的指导和鼓励。"},
+                {"role": "user", "content": f"""
+                以下是家长与扮演'{personality_name}'孩子的AI的对话历史:
+                {formatted_dialogue}
 
+                请根据以上对话，以JSON格式返回以下内容，不要有其他任何文字：
+                1. **guidance**: 给出针对性的沟通建议，指明具体哪里做得好，哪里可以改进。
+                2. **encouragement**: 给出对家长的肯定和鼓励。
+                3. **totalScore**: 本次对话的总分是多少？
+                """}
+            ]
+            
+            llm_response = self._call_qwen_model(guidance_prompt_messages)
+            if not llm_response:
+                raise ValueError("大模型回应为空")
+                
+            guidance_data = json.loads(llm_response)
+            return guidance_data
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"ERROR: 专家指导的LLM回应解析失败。错误: {e}. 原始回应: {llm_response}", file=sys.stderr)
+            return {
+                "guidance": "抱歉，专家指导生成失败，请稍后重试。",
+                "encouragement": "你的尝试本身就非常棒，加油！",
+                "totalScore": 0
+            }
+        except Exception as e:
+            print(f"ERROR: 生成专家指导失败: {e}", file=sys.stderr)
+            return {
+                "guidance": "抱歉，生成专家指导时出现错误。",
+                "encouragement": "请继续尝试与孩子沟通。",
+                "totalScore": 0
+            }
 
-# --- Flask 路由定义 ---
+    def simulate_dialogue(self, parent_input, personality_id, daily_challenge_theme_id):
+        """模拟一轮对话，返回一个元组(response, error)"""
+        selected_personality = next((p for p in self.personalities if str(p.get('id')) == str(personality_id)), None)
+        selected_challenge = next((c for c in self.daily_challenges if str(c.get('id')) == str(daily_challenge_theme_id)), None)
+
+        if not selected_personality or not selected_challenge:
+            return None, "无效的人格或挑战主题ID。"
+
+        selected_scenario = self._find_matching_scenario(selected_challenge)
+        if not selected_scenario:
+            return None, "无法找到匹配的具体情境。"
+        
+        child_response = self._generate_child_response_with_qwen(parent_input, selected_personality, selected_scenario)
+        if not child_response:
+            return None, "大模型生成回应失败。"
+        
+        evaluation_result = self._evaluate_response(parent_input, child_response, selected_personality, selected_scenario)
+        if not evaluation_result:
+            return None, "大模型评估失败。"
+            
+        return jsonify({
+            "response": child_response,
+            "evaluation": evaluation_result
+        }), None
+
+    def _find_matching_scenario(self, challenge):
+        """从挑战主题中随机选择一个情境实例"""
+        try:
+            # 检查是否有Strapi格式的数据结构
+            if 'attributes' in challenge and 'dialogue_scenarios' in challenge['attributes']:
+                scenarios = challenge['attributes']['dialogue_scenarios']['data']
+                if scenarios:
+                    return random.choice(scenarios)
+            
+            # 检查是否有scenario字段（默认数据格式）
+            if 'scenario' in challenge and challenge['scenario']:
+                return challenge['scenario']
+            
+            # 如果没有找到情境，创建一个默认情境
+            return {
+                'id': 1,
+                'attributes': {
+                    'name': '默认情境',
+                    'description': '这是一个默认的情境，用于测试对话功能。'
+                }
+            }
+        except Exception as e:
+            print(f"ERROR: 查找匹配情境失败: {e}", file=sys.stderr)
+            # 返回默认情境
+            return {
+                'id': 1,
+                'attributes': {
+                    'name': '默认情境',
+                    'description': '这是一个默认的情境，用于测试对话功能。'
+                }
+            }
+
+# 路由部分
 @app.route('/')
 def index():
+    """渲染主页"""
     return render_template('index.html')
 
 @app.route('/test')
-def test():
-    """简单的测试端点"""
-    return jsonify({
-        'message': 'Hello from Flask!',
-        'timestamp': str(datetime.now())
-    })
-
-@app.route('/test-frontend')
-def test_frontend():
-    """前端测试页面"""
-    return render_template('test_frontend.html')
-
-@app.route('/health')
-def health_check():
-    """健康检查端点，用于测试应用状态"""
-    global data_initialized
-    
-    # 确保数据已初始化
-    if not data_initialized:
-        print("DEBUG: 健康检查触发数据初始化...")
-        try:
-            setup_application_data_and_simulator()
-            data_initialized = True
-            print("DEBUG: 健康检查数据初始化完成")
-        except Exception as e:
-            print(f"ERROR: 健康检查数据初始化失败: {e}")
-            import traceback
-            print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
-    
-    try:
-        return jsonify({
-            'status': 'healthy',
-            'cache_keys': list(global_strapi_data_cache.keys()),
-            'personalities_count': len(global_strapi_data_cache.get('personalities', [])),
-            'daily_challenges_count': len(global_strapi_data_cache.get('daily_challenges', [])),
-            'simulator_initialized': global_simulator_instance is not None,
-            'data_initialized': data_initialized,
-            'environment_vars': {
-                'STRAPI_URL': 'SET' if os.getenv('STRAPI_URL') else 'NOT_SET',
-                'STRAPI_API_TOKEN': 'SET' if os.getenv('STRAPI_API_TOKEN') else 'NOT_SET',
-                'ALIYUN_DASHSCOPE_API_KEY': 'SET' if os.getenv('ALIYUN_DASHSCOPE_API_KEY') else 'NOT_SET'
-                }
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e)
-        }), 500
+def test_guidance():
+    """测试专家指导功能"""
+    return render_template('test_guidance.html')
 
 @app.route('/get_personalities', methods=['GET'])
 def get_personalities():
-    """获取所有人格特质的名称和 ID，用于前端下拉菜单"""
-    try:
-        print("DEBUG: 开始获取人格数据")
-        print(f"DEBUG: 全局缓存键: {list(global_strapi_data_cache.keys())}")
-        personalities_data = global_strapi_data_cache.get('personalities', [])
-        print(f"DEBUG: 从缓存获取的人格数据: {personalities_data}")
-        
-        # 如果缓存为空，使用硬编码数据
-        if not personalities_data:
-            print("DEBUG: 缓存为空，使用硬编码数据")
-            hardcoded_personalities = [
-                {'id': 1, 'name': '内向敏感型'},
-                {'id': 2, 'name': '外向活泼型'},
-                {'id': 3, 'name': '专注执着型'},
-                {'id': 4, 'name': '创意想象型'}
-            ]
-            return jsonify(hardcoded_personalities)
-        
-        result = [{'id': p.get('id'), 'name': p.get('name')} for p in personalities_data]
-        print(f"DEBUG: 返回的人格数据: {result}")
-        return jsonify(result)
-    except Exception as e:
-        print(f"ERROR: 获取人格数据失败: {e}")
-        import traceback
-        print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
-        return jsonify([]), 500
-
+    """获取所有孩子人格"""
+    return jsonify(global_strapi_data_cache.get('personalities', []))
 
 @app.route('/get_daily_challenges', methods=['GET'])
 def get_daily_challenges():
-    """获取所有日常挑战的名称和 ID，用于前端下拉菜单"""
-    try:
-        print("DEBUG: 开始获取日常挑战数据")
-        print(f"DEBUG: 全局缓存键: {list(global_strapi_data_cache.keys())}")
-        challenges_data = global_strapi_data_cache.get('daily_challenges', [])
-        print(f"DEBUG: 从缓存获取的挑战数据: {challenges_data}")
-        
-        # 如果缓存为空，使用硬编码数据
-        if not challenges_data:
-            print("DEBUG: 缓存为空，使用硬编码数据")
-            hardcoded_challenges = [
-                {'id': 1, 'name': '学习困难'},
-                {'id': 2, 'name': '社交焦虑'},
-                {'id': 3, 'name': '情绪管理'},
-                {'id': 4, 'name': '注意力不集中'}
-            ]
-            return jsonify(hardcoded_challenges)
-        
-        challenges_for_frontend = [
-            {'id': c.get('id'), 'name': c.get('name')}
-            for c in challenges_data
-            if c.get('id') and c.get('name') # 确保 ID 和 name 存在
-        ]
-        print(f"DEBUG: 返回的挑战数据: {challenges_for_frontend}")
-        return jsonify(challenges_for_frontend)
-    except Exception as e:
-        print(f"ERROR: 获取日常挑战数据失败: {e}")
-        import traceback
-        print(f"ERROR: 详细错误信息: {traceback.format_exc()}")
-        return jsonify([]), 500
-
-
-@app.route('/get_scenarios_by_challenge_id/<int:challenge_id>', methods=['GET'])
-def get_scenarios_by_challenge_id(challenge_id):
-    filtered_scenarios = []
-    # 遍历所有情境实例，找到与给定挑战ID匹配的
-    for scenario in global_strapi_data_cache['scenario_instances']:
-        # 检查 scenario 是否有关联的 daily_challenge
-        if 'daily_challenge' in scenario and scenario['daily_challenge'] and scenario['daily_challenge'].get('id') == challenge_id:
-            filtered_scenarios.append({
-                'id': scenario.get('id'),
-                'name': scenario.get('name'),
-                'description': scenario.get('description') # 可以添加更多你想传给前端的字段
-            })
-    print(f"DEBUG: Filtered scenarios for challenge {challenge_id}: {filtered_scenarios}")
-    return jsonify(filtered_scenarios)
-
+    """获取所有日常挑战主题"""
+    return jsonify(global_strapi_data_cache.get('daily-challenges', []))
 
 @app.route('/simulate_dialogue', methods=['POST'])
-def simulate_dialogue():
-    data = request.json
-    parent_utterance = data.get('parent_utterance')
+def simulate_dialogue_route():
+    """处理一轮对话模拟"""
+    data = request.get_json()
+    parent_input = data.get('parent_input')
     personality_id = data.get('personality_id')
-    daily_challenge_id = data.get('daily_challenge_id')
-
-    if not all([parent_utterance, personality_id, daily_challenge_id]):
-        return jsonify({'error': '缺少必要的参数'}), 400
-
-    print(f"DEBUG: 收到对话请求 - 输入: '{parent_utterance}', 人格ID: {personality_id}, 挑战ID: {daily_challenge_id}")
-
-    # 简化的硬编码响应
-    personality_names = {
-        1: '内向敏感型',
-        2: '外向活泼型', 
-        3: '专注执着型',
-        4: '创意想象型'
-    }
+    daily_challenge_theme_id = data.get('daily_challenge_id')
     
-    challenge_names = {
-        1: '学习困难',
-        2: '社交焦虑',
-        3: '情绪管理', 
-        4: '注意力不集中'
-    }
+    # 增加更详细的参数检查和日志
+    if not parent_input:
+        print("ERROR: simulate_dialogue request is missing 'parent_input'", file=sys.stderr)
+        return jsonify({"error": "缺少必要的对话参数: parent_input。"}), 400
+    if not personality_id:
+        print("ERROR: simulate_dialogue request is missing 'personality_id'", file=sys.stderr)
+        return jsonify({"error": "缺少必要的对话参数: personality_id。"}), 400
+    if not daily_challenge_theme_id:
+        print("ERROR: simulate_dialogue request is missing 'daily_challenge_id'", file=sys.stderr)
+        return jsonify({"error": "缺少必要的对话参数: daily_challenge_id。"}), 400
+
+    simulator = ChildInteractionSimulator(
+        global_strapi_data_cache.get('personalities', []),
+        global_strapi_data_cache.get('trait-expressions', []),
+        global_strapi_data_cache.get('scenario-instances', []),
+        global_strapi_data_cache.get('daily-challenges', []),
+        global_strapi_data_cache.get('evaluation-rules', [])
+    )
     
-    personality_name = personality_names.get(personality_id)
-    challenge_name = challenge_names.get(daily_challenge_id)
+    result, error = simulator.simulate_dialogue(parent_input, personality_id, daily_challenge_theme_id)
+    if error:
+        return jsonify({"error": error}), 500
     
-    if not personality_name or not challenge_name:
-        return jsonify({'error': '无效的人格或挑战ID'}), 400
+    return result
+
+@app.route('/get_expert_guidance', methods=['POST'])
+def get_expert_guidance():
+    """处理专家指导请求"""
+    data = request.get_json()
+    dialogue_log = data.get('dialogue_log')
+    personality_id = data.get('personality_id')
     
-    # 返回模拟的对话结果
-    result = {
-        'child_response': f'作为{personality_name}的孩子，面对{challenge_name}时，我会说："{parent_utterance}让我感到..."',
-        'evaluation': f'这是一个针对{personality_name}孩子在{challenge_name}情况下的回应。',
-        'personality_used': personality_name,
-        'challenge_addressed': challenge_name
-    }
+    # 增加更详细的参数检查和日志
+    if not dialogue_log:
+        print("ERROR: get_expert_guidance request is missing 'dialogue_log'", file=sys.stderr)
+        return jsonify({"error": "缺少必要的参数: dialogue_log。"}), 400
+    if not personality_id:
+        print("ERROR: get_expert_guidance request is missing 'personality_id'", file=sys.stderr)
+        return jsonify({"error": "缺少必要的参数: personality_id。"}), 400
+
+    simulator = ChildInteractionSimulator(
+        global_strapi_data_cache.get('personalities', []),
+        global_strapi_data_cache.get('trait-expressions', []),
+        global_strapi_data_cache.get('scenario-instances', []),
+        global_strapi_data_cache.get('daily-challenges', []),
+        global_strapi_data_cache.get('evaluation-rules', [])
+    )
+
+    selected_personality = next((p for p in simulator.personalities if str(p.get('id')) == str(personality_id)), None)
+    if not selected_personality:
+        return jsonify({"error": "无效的人格ID。"}), 400
+        
+    guidance = simulator._generate_expert_guidance(dialogue_log, selected_personality)
     
-    return jsonify(result)
+    return jsonify(guidance)
 
 
-# --- 应用启动入口 ---
+def load_strapi_data():
+    """加载所有 Strapi 数据"""
+    print("INFO: 正在尝试从 Strapi 加载数据...", file=sys.stdout)
+    simulator = ChildInteractionSimulator([], [], [], [], [])
+    
+    try:
+        personalities = simulator._get_entity_data_from_strapi('personalities')
+        if not personalities:
+            print("WARNING: 无法从Strapi加载人格数据，使用默认数据")
+            personalities = [
+                {
+                    'id': 1,
+                    'attributes': {
+                        'name': '慢能量孩子',
+                        'description': '性格内向，反应较慢，需要更多时间思考和回应'
+                    }
+                },
+                {
+                    'id': 2,
+                    'attributes': {
+                        'name': '破能量孩子',
+                        'description': '性格外向，反应较快，容易冲动'
+                    }
+                }
+            ]
+    except Exception as e:
+        print(f"ERROR: 加载人格数据失败: {e}", file=sys.stderr)
+        personalities = []
+    
+    try:
+        daily_challenges = simulator._get_entity_data_from_strapi('daily-challenges')
+        if not daily_challenges:
+            print("WARNING: 无法从Strapi加载挑战数据，使用默认数据")
+            daily_challenges = [
+                {
+                    'id': 1,
+                    'attributes': {
+                        'name': '学习与成长',
+                        'description': '与孩子的学习习惯、作业、考试等相关的挑战'
+                    }
+                },
+                {
+                    'id': 2,
+                    'attributes': {
+                        'name': '情绪管理',
+                        'description': '孩子在表达、理解和控制自己情绪方面的挑战'
+                    }
+                }
+            ]
+    except Exception as e:
+        print(f"ERROR: 加载挑战数据失败: {e}", file=sys.stderr)
+        daily_challenges = []
+    
+    try:
+        evaluation_rules = simulator._get_entity_data_from_strapi('evaluation-rules')
+        if not evaluation_rules:
+            print("WARNING: 无法从Strapi加载评估规则数据，使用默认数据")
+            evaluation_rules = []
+    except Exception as e:
+        print(f"ERROR: 加载评估规则数据失败: {e}", file=sys.stderr)
+        evaluation_rules = []
+    
+    global_strapi_data_cache['personalities'] = personalities
+    global_strapi_data_cache['daily-challenges'] = daily_challenges
+    global_strapi_data_cache['evaluation-rules'] = evaluation_rules
+    
+    print("INFO: Strapi数据加载完成.")
+    print(f"INFO: 加载了 {len(global_strapi_data_cache['personalities'])} 个人格.")
+    print(f"INFO: 加载了 {len(global_strapi_data_cache['daily-challenges'])} 个挑战主题.")
+
+# 在应用启动时加载数据
+load_strapi_data()
+
 if __name__ == '__main__':
-    # 在应用上下文内调用设置函数，确保所有 Flask 相关操作都能正常进行
-    with app.app_context():
-        setup_application_data_and_simulator()
-    
-    # 获取端口号，优先使用环境变量，否则使用默认值
-    port = int(os.environ.get('PORT', 5000))
-    
-    # 运行 Flask 应用
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=5000)
+
+
+
+
+

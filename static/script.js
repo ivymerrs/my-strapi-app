@@ -1,191 +1,330 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // 获取新的 HTML 元素
-    const parentInput = document.getElementById('parent-input');
-    const simulateBtn = document.getElementById('simulate-btn');
-    const spinner = document.getElementById('spinner');
-    const childResponse = document.getElementById('child-response');
-    const evaluationResult = document.getElementById('evaluation-result');
-    const rawOutputPre = document.getElementById('raw-output-pre');
-    const rawOutputContainer = document.getElementById('raw-llm-output-container');
+// my-project/static/script.js
 
-    // 新增：下拉框元素
+document.addEventListener('DOMContentLoaded', function() {
+    // UI 元素
+    const initialSetupScreen = document.querySelector('.initial-setup');
+    const startBtn = document.getElementById('start-btn');
     const personalitySelect = document.getElementById('personality-select');
-    const dailyChallengeSelect = document.getElementById('daily-challenge-select'); // 修改 ID
-
-    // 移除不再需要的元素引用，因为新的 HTML 结构更简化
-
-    // API Endpoint (使用相对路径，适用于生产环境)
-    const API_URL = '/simulate_dialogue';
-
-    // 新增：加载人格列表
-    fetch('/get_personalities')
-        .then(response => response.json())
-        .then(personalities => {
-            console.log("DEBUG (Frontend): 接收到的人格原始数据:", personalities); // 保留调试信息
-
-            // 修正这里：确保从每个对象中提取 'name' 字段
-            personalities.forEach(p => { // p 现在是 {'id': ..., 'name': '...'} 对象
-                    const option = document.createElement('option');
-                option.value = p.id; // value 使用 ID，发送给后端
-                option.textContent = p.name; // textContent 显示 name
-                    personalitySelect.appendChild(option);
-                });
-            // 默认选中第一个（如果有数据的话）
-                if (personalities.length > 0) {
-                personalitySelect.value = personalities[0].id; // 默认选中第一个的ID
-            }
-        })
-        .catch(error => console.error('Error loading personalities:', error));
-
-    // 加载大类挑战列表
-    fetch('/get_daily_challenges') // 修改请求路由
-        .then(response => response.json())
-        .then(data => {
-            console.log("DEBUG (Frontend): 接收到的挑战原始数据:", data); // 保留调试信息
-            data.forEach(c => {
-                    const option = document.createElement('option');
-                option.value = c.id; // value 使用 ID，发送给后端
-                option.textContent = c.name; // textContent 显示 name
-                dailyChallengeSelect.appendChild(option); // 修改 ID
-                });
-            // 默认选中第一个（如果有数据的话）
-            if (data.length > 0) {
-                dailyChallengeSelect.value = data[0].id;
-            }
-        })
-        .catch(error => console.error('Error loading daily challenges:', error));
-
-    // 简化的渲染函数
-    const renderResults = (childResponseText, evaluationData) => {
-        // 显示孩子回应
-        childResponse.textContent = `孩子回应: ${childResponseText}`;
-        
-        // 调试信息
-        console.log("DEBUG: evaluationData:", evaluationData);
-        console.log("DEBUG: child_desired_response_inner_monologue:", evaluationData?.child_desired_response_inner_monologue);
-        
-        // 显示评估结果
-        if (evaluationData && evaluationData.evaluation_score) {
-            const score = evaluationData.evaluation_score;
-            const reason = evaluationData.reason_analysis || '无详细分析';
-            const innerMonologue = evaluationData.child_desired_response_inner_monologue || '无内心独白';
-            
-            console.log("DEBUG: innerMonologue value:", innerMonologue);
-            
-            // 提取父级输入分析信息
-            const parentAnalysis = evaluationData.parent_input_analysis || {};
-            const recognizedTrait = parentAnalysis.recognized_trait || '未识别';
-            const recognizedNeed = parentAnalysis.recognized_need || '未识别';
-            const communicationStyle = parentAnalysis.communication_style || '未分析';
-            const positiveAspects = parentAnalysis.positive_aspects || [];
-            const areasForImprovement = parentAnalysis.areas_for_improvement || [];
-            
-            evaluationResult.innerHTML = `
-                <div class="evaluation-section">
-                    <h3>沟通评估</h3>
-                    <p><strong>评价得分:</strong> ${score}</p>
-                    <p><strong>分析理由:</strong> ${reason}</p>
-                </div>
-                
-                <div class="parent-analysis-section">
-                    <h3>父级输入分析</h3>
-                    <p><strong>识别到的人格特质:</strong> ${recognizedTrait}</p>
-                    <p><strong>识别到的核心需求:</strong> ${recognizedNeed}</p>
-                    <p><strong>沟通风格:</strong> ${communicationStyle}</p>
-                </div>
-                
-                <div class="positive-aspects-section">
-                    <h3>积极方面</h3>
-                    ${positiveAspects.length > 0 ? 
-                        `<ul>${positiveAspects.map(aspect => `<li>${aspect}</li>`).join('')}</ul>` : 
-                        '<p>无特别突出的积极方面</p>'
-                    }
-                </div>
-                
-                <div class="improvement-section">
-                    <h3>需要改进的方面</h3>
-                    ${areasForImprovement.length > 0 ? 
-                        `<ul>${areasForImprovement.map(area => `<li>${area}</li>`).join('')}</ul>` : 
-                        '<p>无特别需要改进的方面</p>'
-                    }
-                </div>
-                
-                <div class="inner-monologue-section">
-                    <h3>孩子内心独白</h3>
-                    <p>${innerMonologue}</p>
-                </div>
-            `;
-        } else {
-            evaluationResult.textContent = '评价: 暂无评估数据';
+    const challengeSelect = document.getElementById('daily-challenge-select');
+    
+    const chatContainer = document.querySelector('.chat-container');
+    const chatBox = document.getElementById('chat-box');
+    const parentInput = document.getElementById('parent-input');
+    const sendBtn = document.getElementById('send-btn');
+    const guidanceBtn = document.getElementById('guidance-btn');
+    const totalScoreSpan = document.getElementById('total-score');
+    
+    // 增加防御性检查：如果核心元素不存在，打印错误并停止脚本
+    if (!initialSetupScreen || !startBtn || !personalitySelect || !challengeSelect || !chatContainer || !chatBox || !parentInput || !sendBtn || !guidanceBtn || !totalScoreSpan) {
+        console.error('ERROR: 缺少必要的UI元素。请确保您的templates/index.html文件是最新版本，它包含了所有必需的ID。');
+        return; // 中断脚本执行
+    }
+    
+    const guidanceModal = document.getElementById('guidance-modal');
+    // 在获取子元素之前，先检查模态框元素是否存在
+    let guidanceContent = null;
+    if (guidanceModal) {
+        guidanceContent = guidanceModal.querySelector('.guidance-content');
+        if (!guidanceContent) {
+            console.error('ERROR: 找不到 .guidance-content 元素。专家指导功能将无法使用。');
         }
-    };
+    } else {
+        console.error('ERROR: 找不到 #guidance-modal 元素。专家指导功能将无法使用。请确保您的templates/index.html文件是最新版本。');
+    }
 
-    simulateBtn.addEventListener('click', async () => {
-        const parentUtterance = parentInput.value.trim();
-        if (!parentUtterance) {
-            alert('请输入您想对孩子说的话。');
+    // 游戏状态
+    let dialogueLog = []; // 存储所有对话的完整历史
+    let totalScore = 0;
+    let consecutiveNegativeCount = 0;
+    let isDialogueActive = false;
+
+    // 事件监听器
+    startBtn.addEventListener('click', startDialogue);
+    sendBtn.addEventListener('click', handleParentInput);
+    if (guidanceBtn) { // 确保元素存在再添加监听器
+        guidanceBtn.addEventListener('click', handleGuidanceRequest);
+    }
+    
+    parentInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (isDialogueActive) {
+                handleParentInput();
+            }
+        }
+    });
+
+    // 初始化加载人格和挑战主题
+    populatePersonalities();
+    populateDailyChallenges();
+
+    // 辅助函数
+    function addMessageToChat(sender, text, score=null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', sender === 'parent' ? 'parent-message' : 'child-message');
+
+        const messageContentDiv = document.createElement('div');
+        messageContentDiv.classList.add('message-content');
+        
+        const bubbleDiv = document.createElement('div');
+        bubbleDiv.classList.add('bubble');
+        bubbleDiv.innerHTML = text; // 使用 innerHTML 支持换行符
+        
+        if (sender === 'child' && score !== null) {
+            // 如果是孩子回应，并且有分数，把分数标签放在气泡左侧
+            const scoreTag = document.createElement('span');
+            scoreTag.classList.add('score-tag');
+            scoreTag.textContent = `${score > 0 ? '+' : ''}${score}`;
+            scoreTag.classList.add(`score-${score > 0 ? (score >= 8 ? 'a' : 'b') : 'c'}`);
+            messageContentDiv.appendChild(scoreTag);
+        }
+        
+        messageContentDiv.appendChild(bubbleDiv);
+        
+        messageDiv.appendChild(messageContentDiv);
+
+        chatBox.appendChild(messageDiv);
+        chatBox.scrollTop = chatBox.scrollHeight; // 滚动到底部
+    }
+
+    function addLoadingMessage() {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.classList.add('loading-message');
+        loadingDiv.id = 'loading-message';
+        loadingDiv.textContent = '孩子正在思考...';
+        chatBox.appendChild(loadingDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeLoadingMessage() {
+        const loadingDiv = document.getElementById('loading-message');
+        if (loadingDiv) {
+            loadingDiv.remove();
+        }
+    }
+
+    // 核心逻辑函数
+    function startDialogue() {
+        const personality_id = personalitySelect.value;
+        const daily_challenge_id = challengeSelect.value;
+        
+        if (!initialSetupScreen) {
+            console.error('DEBUG: initialSetupScreen 元素不存在');
             return;
         }
 
-        // 获取当前选择的人格和大主题挑战的 ID
-        const selectedPersonalityId = personalitySelect ? personalitySelect.value : '';
-        const selectedDailyChallengeId = dailyChallengeSelect ? dailyChallengeSelect.value : '';
+        if (!personality_id || !daily_challenge_id) {
+            alert('请选择人格和挑战主题！');
+            return;
+        }
 
-        // 显示加载动画
-        spinner.style.display = 'block';
-        rawOutputContainer.style.display = 'none'; // Hide raw output initially
-        
+        // 隐藏初始设置，显示聊天框
+        initialSetupScreen.style.display = 'none';
+        chatContainer.style.display = 'flex';
+        guidanceBtn.style.display = 'inline-block';
+        isDialogueActive = true;
+
+        // 欢迎语
+        addMessageToChat('child', '你好，爸爸/妈妈，准备好和我对话了吗？');
+    }
+
+    async function populatePersonalities() {
         try {
-            const response = await fetch(API_URL, {
+            const response = await fetch('/get_personalities');
+            const data = await response.json();
+            console.log("DEBUG: 接收到的人格数据:", data);
+
+            personalitySelect.innerHTML = '<option value="">选择人格</option>';
+            data.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.id;
+                // 处理不同的数据格式
+                if (p.attributes && p.attributes.name) {
+                    option.textContent = p.attributes.name;
+                } else if (p.name) {
+                    option.textContent = p.name;
+                } else {
+                    console.warn('无法获取人格名称:', p);
+                    return;
+                }
+                personalitySelect.appendChild(option);
+                console.log(`DEBUG: 添加人格选项: ${option.textContent} (值: ${option.value})`);
+            });
+            console.log("DEBUG: 人格数据加载完成，选项数量:", personalitySelect.options.length);
+        } catch (error) {
+            console.error('获取人格失败:', error);
+        }
+    }
+
+    async function populateDailyChallenges() {
+        try {
+            const response = await fetch('/get_daily_challenges');
+            const data = await response.json();
+            console.log("DEBUG: 接收到的挑战主题数据:", data);
+
+            challengeSelect.innerHTML = '<option value="">选择挑战主题</option>';
+            data.forEach(challenge => {
+                const option = document.createElement('option');
+                option.value = challenge.id;
+                // 处理不同的数据格式
+                if (challenge.attributes && challenge.attributes.name) {
+                    option.textContent = challenge.attributes.name;
+                } else if (challenge.name) {
+                    option.textContent = challenge.name;
+                } else {
+                    console.warn('无法获取挑战主题名称:', challenge);
+                    return;
+                }
+                challengeSelect.appendChild(option);
+                console.log(`DEBUG: 添加挑战主题选项: ${option.textContent} (值: ${option.value})`);
+            });
+            console.log("DEBUG: 挑战主题数据加载完成，选项数量:", challengeSelect.options.length);
+        } catch (error) {
+            console.error('获取日常挑战主题失败:', error);
+        }
+    }
+
+    async function handleParentInput() {
+        const parent_input = parentInput.value.trim();
+        const personality_id = personalitySelect.value;
+        const daily_challenge_id = challengeSelect.value;
+
+        if (!parent_input) return;
+
+        addMessageToChat('parent', parent_input);
+        
+        parentInput.value = '';
+        addLoadingMessage();
+        parentInput.disabled = true;
+        sendBtn.disabled = true;
+        guidanceBtn.disabled = true;
+
+        try {
+            const response = await fetch('/simulate_dialogue', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
-                    parent_utterance: parentUtterance,
-                    // 将发送的参数改为 ID
-                    personality_id: selectedPersonalityId, // 修改为 personality_id
-                    daily_challenge_id: selectedDailyChallengeId // 修改为 daily_challenge_id
+                body: JSON.stringify({
+                    parent_input: parent_input,
+                    personality_id: personality_id,
+                    daily_challenge_id: daily_challenge_id
                 })
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP 错误！状态码: ${response.status}`);
+            const data = await response.json();
+            
+            removeLoadingMessage();
+            parentInput.disabled = false;
+            sendBtn.disabled = false;
+            guidanceBtn.disabled = false;
+
+            if (response.ok) {
+                console.log("DEBUG: 收到对话响应:", data);
+                
+                // 检查响应数据结构
+                const childResponse = data.child_response || data.response;
+                const evaluation = data.evaluation || {};
+                const score = evaluation.score || evaluation.evaluation_score || 0;
+                
+                addMessageToChat('child', childResponse, score);
+                
+                totalScore += score;
+                totalScoreSpan.textContent = `总分: ${totalScore}`;
+                dialogueLog.push({
+                    parent_input: parent_input,
+                    child_response: childResponse,
+                    evaluation: evaluation
+                });
+            } else {
+                console.error("DEBUG: API错误:", data);
+                addMessageToChat('child', '系统错误: ' + (data.error || '未知错误'));
             }
+        } catch (error) {
+            console.error('模拟对话请求失败:', error);
+            removeLoadingMessage();
+            parentInput.disabled = false;
+            sendBtn.disabled = false;
+            guidanceBtn.disabled = false;
+            addMessageToChat('child', '错误: 请求失败，请检查网络。');
+        }
+    }
+
+    async function handleGuidanceRequest() {
+        if (!isDialogueActive || dialogueLog.length === 0) {
+            alert('请先进行对话！');
+            return;
+        }
+
+        // 在调用前再次检查模态框元素是否存在
+        if (!guidanceModal) {
+            console.error('ERROR: 专家指导模态框元素不存在。请确保您的templates/index.html文件是最新版本。');
+            alert('专家指导功能不可用：模态框元素不存在。请刷新页面重试。');
+            return;
+        }
+        
+        if (!guidanceContent) {
+            console.error('ERROR: 专家指导内容元素不存在。请确保您的templates/index.html文件是最新版本。');
+            alert('专家指导功能不可用：内容元素不存在。请刷新页面重试。');
+            return;
+        }
+
+        parentInput.disabled = true;
+        sendBtn.disabled = true;
+        guidanceBtn.disabled = true;
+        addLoadingMessage();
+
+        try {
+            const response = await fetch('/get_expert_guidance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    dialogue_log: dialogueLog,
+                    personality_id: personalitySelect.value
+                })
+            });
 
             const data = await response.json();
-            console.log("API Response:", data); // Log the full response for debugging
-
-            // 精确提取孩子回应
-            const childResponseText = data.child_response || '未收到孩子回应。';
-
-            // 精确提取评估信息 - 后端返回的是扁平结构，不是嵌套的 evaluation 对象
-            const evaluation = {
-                evaluation_score: data.evaluation_score,
-                reason_analysis: data.reason_analysis,
-                parent_input_analysis: data.parent_input_analysis,
-                child_desired_response_inner_monologue: data.child_desired_response_inner_monologue
-            };
+            removeLoadingMessage();
             
-            // 调试信息
-            console.log("DEBUG: 原始数据:", data);
-            console.log("DEBUG: 提取的评估数据:", evaluation);
-            console.log("DEBUG: 内心独白原始值:", data.child_desired_response_inner_monologue);
-
-            // 渲染结果
-            renderResults(childResponseText, evaluation);
-
-            // Display raw JSON response for debugging
-            rawOutputPre.textContent = JSON.stringify(data, null, 2);
-            rawOutputContainer.style.display = 'block';
-
-            parentInput.value = ''; // Clear input field
+            if (response.ok) {
+                showGuidanceModal(data);
+                isDialogueActive = false;
+            } else {
+                alert('获取专家指导失败：' + (data.error || '未知错误'));
+                parentInput.disabled = false;
+                sendBtn.disabled = false;
+                guidanceBtn.disabled = false;
+            }
         } catch (error) {
-            console.error("发送请求失败:", error);
-            alert(`发生错误: ${error.message || '未知错误'}`);
-        } finally {
-            spinner.style.display = 'none';
+            console.error('获取专家指导请求失败:', error);
+            removeLoadingMessage();
+            alert('获取专家指导失败，请检查网络。');
+            parentInput.disabled = false;
+            sendBtn.disabled = false;
+            guidanceBtn.disabled = false;
         }
-    });
+    }
+    
+    function showGuidanceModal(data) {
+        const html = `
+            <h3>对话总结与专家指导</h3>
+            <p><strong>本次对话总分:</strong> <span style="font-size: 1.2rem; font-weight: bold;">${totalScore}</span></p>
+            <p><strong>指导建议:</strong><br>${data.guidance}</p>
+            <p><strong>鼓励与肯定:</strong><br>${data.encouragement}</p>
+            <button onclick="window.location.reload()">重新开始</button>
+        `;
+        guidanceContent.innerHTML = html;
+        guidanceModal.style.display = 'flex';
+    }
+
+    if (guidanceModal) { // 确保模态框存在
+        guidanceModal.addEventListener('click', (e) => {
+            if (e.target === guidanceModal) {
+                guidanceModal.style.display = 'none';
+            }
+        });
+    }
 });

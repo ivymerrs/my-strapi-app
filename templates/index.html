@@ -1,3 +1,4 @@
+<!-- my-project/templates/index.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -6,377 +7,290 @@
     <title>亲子模拟对话</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        /* 全局字体和基础样式 */
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* 新增的CSS样式 */
+        body, html {
+            height: 100%;
             margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
         }
 
-        /* 简单的CSS加载动画 */
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border-left-color: #ff6b6b;
-            animation: spin 1s ease infinite;
-            display: none; /* 默认隐藏 */
-            margin: 30px auto;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* 为原始LLM输出添加样式 */
-        .raw-output-container {
-            margin-top: 30px;
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            padding: 15px;
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #e0e0e0;
             border-radius: 8px;
-            display: none; /* 默认隐藏 */
-        }
-        .raw-output-container h2 {
-            margin-top: 0;
-            color: #555;
-            font-size: 1.2em;
-            margin-bottom: 10px;
-        }
-        .raw-output-container pre {
-            background-color: #e9e9e9;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto; /* 水平滚动条 */
-            white-space: pre-wrap; /* 自动换行 */
-            word-break: break-all; /* 单词内部断行 */
-            font-family: monospace; /* 代码字体 */
-            font-size: 0.9em;
-            line-height: 1.4;
-            color: #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background-color: #fff;
+            overflow: hidden;
         }
 
-        /* 输出区域样式 */
-        .output-section {
-            margin-top: 30px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .output-section h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 1.8em;
-            font-weight: 600;
+        .chat-header {
+            padding: 15px;
+            background-color: #fff;
+            border-bottom: 1px solid #e0e0e0;
             text-align: center;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-        }
-
-        .output-section p {
-            margin: 15px 0;
-            padding: 15px;
-            background: rgba(52, 152, 219, 0.1);
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-            font-size: 1.1em;
-            line-height: 1.6;
-        }
-
-        /* 评估结果样式 */
-        .evaluation-section, .parent-analysis-section, .positive-aspects-section, 
-        .improvement-section, .inner-monologue-section {
-            margin-bottom: 20px;
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 5px solid #007bff;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
-        }
-
-        .evaluation-section:hover, .parent-analysis-section:hover, 
-        .positive-aspects-section:hover, .improvement-section:hover, 
-        .inner-monologue-section:hover {
-            transform: translateY(-2px);
-        }
-
-        .evaluation-section {
-            background-color: #f8f9fa;
-            border-left-color: #28a745;
-        }
-
-        .parent-analysis-section {
-            background-color: #fff3cd;
-            border-left-color: #ffc107;
-        }
-
-        .positive-aspects-section {
-            background-color: #d4edda;
-            border-left-color: #28a745;
-        }
-
-        .improvement-section {
-            background-color: #f8d7da;
-            border-left-color: #dc3545;
-        }
-
-        .inner-monologue-section {
-            background-color: #e2e3e5;
-            border-left-color: #6c757d;
-        }
-
-        .evaluation-section h3, .parent-analysis-section h3, 
-        .positive-aspects-section h3, .improvement-section h3, 
-        .inner-monologue-section h3 {
-            margin-top: 0;
-            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
             color: #333;
-            font-size: 1.1em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .evaluation-section p, .parent-analysis-section p, 
-        .positive-aspects-section p, .improvement-section p, 
-        .inner-monologue-section p {
-            margin: 5px 0;
-            line-height: 1.5;
+        .chat-box {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        .positive-aspects-section ul, .improvement-section ul {
-            margin: 10px 0;
-            padding-left: 20px;
+        .message {
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .message-content {
+            display: flex;
+            align-items: center; /* 垂直居中 */
+            gap: 10px; /* 气泡和评分标签的间距 */
         }
 
-        .positive-aspects-section li, .improvement-section li {
-            margin: 5px 0;
+        .parent-message {
+            justify-content: flex-end;
+        }
+
+        .child-message {
+            justify-content: flex-start;
+        }
+
+        .parent-message .bubble {
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .child-message .bubble {
+            background-color: #e5e5ea;
+            color: black;
+            border-bottom-left-radius: 4px;
+        }
+
+        .bubble {
+            max-width: 70%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
             line-height: 1.4;
         }
 
-        /* 用户输入区域样式 */
-        .input-section {
-            margin-bottom: 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        .input-area {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #e0e0e0;
         }
 
-        .input-section label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #fff;
-            font-size: 1.1em;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        .input-area textarea {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            margin-right: 10px;
+            resize: none;
+            height: 40px;
+            line-height: 20px;
         }
 
-        .input-section select {
-            width: 100%;
-            padding: 12px 15px;
+        .input-area button {
+            padding: 10px 20px;
             border: none;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.95);
-            font-size: 1em;
-            color: #333;
+            background-color: #007bff;
+            color: white;
+            border-radius: 20px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+            transition: background-color 0.2s;
         }
 
-        .input-section select:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        .input-area button:hover {
+            background-color: #0056b3;
         }
-
-        .input-section select:focus {
-            outline: none;
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3), 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .input-section textarea {
-            width: 100%;
-            min-height: 120px;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.95);
-            font-size: 1em;
-            color: #333;
-            resize: vertical;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            font-family: inherit;
-        }
-
-        .input-section textarea:hover {
-            background: rgba(255, 255, 255, 1);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .input-section textarea:focus {
-            outline: none;
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3), 0 6px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .input-section textarea::placeholder {
-            color: #666;
+        
+        /* 隐藏旧的加载动画，因为我们将用更优雅的方式替代 */
+        .spinner { display: none !important; }
+        
+        /* 新的加载提示样式 */
+        .loading-message {
+            text-align: center;
             font-style: italic;
+            color: #888;
+            padding: 10px;
         }
+        
+        /* 专家指导按钮样式 */
+        .guidance-btn {
+            background-color: #28a745;
+        }
+        
+        .guidance-btn:hover {
+            background-color: #218838;
+        }
+        
+        /* 评分标签样式 */
+        .score-tag {
+            font-size: 0.8rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+        
+        .score-tag-wrapper {
+            display: flex;
+            align-items: center;
+            /* 确保评分标签总是和气泡在同一行 */
+        }
+        
+        .score-a { background-color: #28a745; color: white; }
+        .score-b { background-color: #ffc107; color: black; }
+        .score-c { background-color: #dc3545; color: white; }
 
-        /* 按钮样式 */
-        #simulate-btn {
+        /* 初始设置界面的样式 */
+        .initial-setup {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            height: 100%;
+            background-color: rgba(255,255,255,0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .input-section {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .input-section label {
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .input-section select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            min-width: 250px;
+        }
+        .initial-setup button {
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 12px;
-            font-size: 1.2em;
-            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 6px 20px rgba(238, 90, 36, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            transition: background-color 0.2s;
         }
-
-        #simulate-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(238, 90, 36, 0.4);
-            background: linear-gradient(135deg, #ff5252 0%, #e74c3c 100%);
+        .initial-setup button:hover {
+            background-color: #0056b3;
         }
-
-        #simulate-btn:active {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(238, 90, 36, 0.3);
+        
+        /* 模态框样式 */
+        #guidance-modal {
+            position: fixed;
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
         }
-
-        /* 容器样式 */
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 30px 20px;
-            background: rgba(255, 255, 255, 0.95);
-            min-height: 100vh;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        #guidance-modal .guidance-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 80%;
+            max-height: 80%;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            line-height: 1.6;
         }
-
-        .container h1 {
-            text-align: center;
-            color: #2c3e50;
-            margin-bottom: 40px;
-            font-size: 2.5em;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        #guidance-modal h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
         }
-
-        /* 动画效果 */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .input-section {
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        .input-section:nth-child(2) {
-            animation-delay: 0.1s;
-        }
-
-        .input-section:nth-child(3) {
-            animation-delay: 0.2s;
-        }
-
-        .input-section:nth-child(4) {
-            animation-delay: 0.3s;
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px 15px;
-            }
-            
-            .container h1 {
-                font-size: 2em;
-            }
-            
-            .input-section {
-                padding: 15px;
-            }
-            
-            #simulate-btn {
-                padding: 12px 20px;
-                font-size: 1.1em;
-            }
+        #guidance-modal button {
+            display: block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 亲子沟通模拟器</h1>
-
+    <!-- 初始设置界面 -->
+    <div class="initial-setup" id="initial-setup-screen">
+        <h2>开始模拟对话</h2>
         <div class="input-section">
-            <label for="personality-select">👤 选择孩子人格:</label>
-            <select id="personality-select">
-                <option value="">请选择孩子的人格类型...</option>
-            </select>
+            <label for="personality-select">选择孩子人格:</label>
+            <select id="personality-select"></select>
         </div>
-
         <div class="input-section">
-            <label for="daily-challenge-select">🎯 选择挑战主题:</label>
-            <select id="daily-challenge-select">
-                <option value="">请选择当前的挑战主题...</option>
-            </select>
+            <label for="daily-challenge-select">选择挑战主题:</label>
+            <select id="daily-challenge-select"></select>
         </div>
-
-        <div class="input-section">
-            <label for="parent-input">💬 家长输入:</label>
-            <textarea id="parent-input" placeholder="在这里输入您想对孩子说的话...&#10;例如：'宝贝，你今天在学校怎么样？'"></textarea>
-        </div>
-
-        <button id="simulate-btn">🚀 开始模拟对话</button>
-
-        <div class="spinner" id="spinner"></div>
-
-        <div class="output-section">
-            <h2>📊 模拟结果</h2>
-            <p id="child-response">孩子回应: </p>
-            <p id="evaluation-result">评价: </p>
-        </div>
-
-        <div class="raw-output-container" id="raw-llm-output-container">
-            <h2>原始 LLM 输出 (调试用)</h2>
-            <pre id="raw-output-pre"></pre>
-        </div>
-
+        <button id="start-btn">开始对话</button>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <!-- 聊天主界面，初始状态隐藏 -->
+    <div class="chat-container" id="chat-container" style="display: none;">
+        <div class="chat-header">
+            <div>亲子模拟对话</div>
+            <span id="total-score">总分: 0</span>
+        </div>
+
+        <div class="chat-box" id="chat-box">
+            <!-- 对话气泡将在这里动态添加 -->
+        </div>
+
+        <div class="input-area">
+            <textarea id="parent-input" placeholder="输入您想对孩子说的话..."></textarea>
+            <button id="send-btn">发送</button>
+            <button id="guidance-btn" class="guidance-btn" style="display: none;">专家指导</button>
+        </div>
+    </div>
+    
+    <!-- 专家指导模态框 -->
+    <div id="guidance-modal">
+        <div class="guidance-content">
+            <!-- 专家指导内容将在这里动态加载 -->
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js', v='1.1') }}"></script>
 </body>
-</html> 
+</html>
