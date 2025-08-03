@@ -100,9 +100,19 @@ services:
     env: python
     plan: free
     buildCommand: |
-      echo "=== Installing Python dependencies ==="
+      echo "=== 开始构建 Flask 应用 ==="
+      echo "当前时间: $(date)"
+      echo "Python 版本: $(python --version)"
+      echo "pip 版本: $(pip --version)"
+      echo "=== 安装 Python 依赖 ==="
       pip install -r requirements.txt
-      echo "=== Build completed ==="
+      echo "=== 检查文件结构 ==="
+      ls -la
+      echo "=== 检查 templates 目录 ==="
+      ls -la templates/
+      echo "=== 检查 static 目录 ==="
+      ls -la static/
+      echo "=== 构建完成 ==="
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
