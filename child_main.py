@@ -637,7 +637,7 @@ class ChildInteractionSimulator:
         try:
             if "根据预设，你应该回复：" in prompt:
                 start_idx = prompt.find("根据预设，你应该回复：") + len("根据预设，你应该回复：") + 1
-                end_idx = prompt.find("”", start_idx)
+                end_idx = prompt.find("\"", start_idx)
                 if start_idx != -1 and end_idx != -1:
                     child_response = prompt[start_idx:end_idx] + "（预设回复）"
                 else:
@@ -649,6 +649,70 @@ class ChildInteractionSimulator:
         except Exception as e:
             print(f"ERROR (child_main): 调用LLM失败: {e}")
             return f"孩子暂时无法回应，请稍后再试。（LLM错误：{e}）"
+
+    def generate_expert_guidance(self, dialogue_log, personality_name):
+        """
+        根据完整的对话历史生成专家指导
+        """
+        try:
+            # 格式化对话历史
+            formatted_dialogue = "\n".join([
+                f"家长说: \"{d.get('parent_input', d.get('parent_utterance', ''))}\"\n"
+                f"孩子回应: \"{d.get('child_response', '')}\"\n"
+                f"评价: {d.get('evaluation_score', 'N/A')}分 - {d.get('reason_analysis', '')}"
+                for d in dialogue_log
+            ])
+
+            # 构建专家指导的提示词
+            guidance_prompt = f"""
+你是一个专业的亲子沟通专家，请根据以下对话历史，给家长提供一份全面而有针对性的指导和鼓励。
+
+对话背景：家长正在与扮演'{personality_name}'孩子的AI进行模拟对话练习。
+
+对话历史：
+{formatted_dialogue}
+
+请分析以上对话，并以JSON格式返回以下内容（不要有其他任何文字）：
+{{
+    "guidance": "给出针对性的沟通建议，指明具体哪里做得好，哪里可以改进。建议要具体、可操作。",
+    "encouragement": "给出对家长的肯定和鼓励，认可他们的努力和进步。",
+    "totalScore": 本次对话的总分（基于所有对话的评分计算平均值，满分10分）
+}}
+
+请确保返回的是有效的JSON格式。
+"""
+
+            # 调用LLM生成专家指导
+            llm_response = self.call_qwen_api(guidance_prompt, temperature=0.3, max_tokens=800)
+            
+            if not llm_response:
+                return {
+                    "guidance": "抱歉，专家指导生成失败，请稍后重试。",
+                    "encouragement": "你的尝试本身就非常棒，加油！",
+                    "totalScore": 0
+                }
+
+            # 尝试解析JSON响应
+            try:
+                import json
+                guidance_data = json.loads(llm_response)
+                return guidance_data
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON for expert guidance: {e}. Raw response: {llm_response}")
+                # 如果JSON解析失败，返回默认指导
+                return {
+                    "guidance": "基于您的对话历史，建议您：\n1. 多倾听孩子的感受\n2. 使用积极的语言\n3. 给予孩子足够的关注和支持\n4. 保持耐心和理解",
+                    "encouragement": "您的努力和尝试非常值得肯定！每个家长都在学习如何更好地与孩子沟通。",
+                    "totalScore": 7
+                }
+
+        except Exception as e:
+            print(f"ERROR: 生成专家指导失败: {e}")
+            return {
+                "guidance": "抱歉，专家指导生成失败，请稍后重试。",
+                "encouragement": "你的尝试本身就非常棒，加油！",
+                "totalScore": 0
+            }
 
 def get_all_evaluation_rules_from_strapi():
     """
