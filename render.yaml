@@ -107,7 +107,7 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
-      - key: STRAPI_URL
+      - key: STRAPI_API_URL
         value: "https://my-strapi-app-uaeb.onrender.com"
       - key: STRAPI_API_TOKEN
         value: "sk-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
