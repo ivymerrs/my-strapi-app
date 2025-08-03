@@ -110,8 +110,8 @@ services:
       - key: STRAPI_URL
         value: "https://my-strapi-app-uaeb.onrender.com"
       - key: STRAPI_API_TOKEN
-        value: "your-strapi-api-token-here"
+        value: "sk-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
       - key: ALIYUN_DASHSCOPE_API_KEY
-        value: "your-aliyun-api-key-here"
+        value: "sk-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
       - key: FLASK_ENV
         value: "production" 
