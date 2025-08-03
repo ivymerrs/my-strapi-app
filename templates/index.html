@@ -252,42 +252,51 @@
     </style>
 </head>
 <body>
-    <!-- 初始设置界面 -->
-    <div class="initial-setup" id="initial-setup-screen">
-        <h2>开始模拟对话</h2>
-        <div class="input-section">
-            <label for="personality-select">选择孩子人格:</label>
-            <select id="personality-select"></select>
+    <div class="container">
+        <!-- 版本标识 -->
+        <div style="background: #ff6b6b; color: white; text-align: center; padding: 5px; margin-bottom: 20px; border-radius: 5px;">
+            🚀 最新版本 v2.0 - 已修复模态框和API问题
         </div>
-        <div class="input-section">
-            <label for="daily-challenge-select">选择挑战主题:</label>
-            <select id="daily-challenge-select"></select>
-        </div>
-        <button id="start-btn">开始对话</button>
-    </div>
-
-    <!-- 聊天主界面，初始状态隐藏 -->
-    <div class="chat-container" id="chat-container" style="display: none;">
-        <div class="chat-header">
-            <div>亲子模拟对话</div>
-            <span id="total-score">总分: 0</span>
-        </div>
-
-        <div class="chat-box" id="chat-box">
-            <!-- 对话气泡将在这里动态添加 -->
+        
+        <h1><span class="target-icon">🎯</span> 亲子沟通模拟器</h1>
+        
+        <!-- 初始设置界面 -->
+        <div class="initial-setup" id="initial-setup-screen">
+            <h2>开始模拟对话</h2>
+            <div class="input-section">
+                <label for="personality-select">选择孩子人格:</label>
+                <select id="personality-select"></select>
+            </div>
+            <div class="input-section">
+                <label for="daily-challenge-select">选择挑战主题:</label>
+                <select id="daily-challenge-select"></select>
+            </div>
+            <button id="start-btn">开始对话</button>
         </div>
 
-        <div class="input-area">
-            <textarea id="parent-input" placeholder="输入您想对孩子说的话..."></textarea>
-            <button id="send-btn">发送</button>
-            <button id="guidance-btn" class="guidance-btn" style="display: none;">专家指导</button>
+        <!-- 聊天主界面，初始状态隐藏 -->
+        <div class="chat-container" id="chat-container" style="display: none;">
+            <div class="chat-header">
+                <div>亲子模拟对话</div>
+                <span id="total-score">总分: 0</span>
+            </div>
+
+            <div class="chat-box" id="chat-box">
+                <!-- 对话气泡将在这里动态添加 -->
+            </div>
+
+            <div class="input-area">
+                <textarea id="parent-input" placeholder="输入您想对孩子说的话..."></textarea>
+                <button id="send-btn">发送</button>
+                <button id="guidance-btn" class="guidance-btn" style="display: none;">专家指导</button>
+            </div>
         </div>
-    </div>
-    
-    <!-- 专家指导模态框 -->
-    <div id="guidance-modal">
-        <div class="guidance-content">
-            <!-- 专家指导内容将在这里动态加载 -->
+        
+        <!-- 专家指导模态框 -->
+        <div id="guidance-modal">
+            <div class="guidance-content">
+                <!-- 专家指导内容将在这里动态加载 -->
+            </div>
         </div>
     </div>
 
