@@ -502,6 +502,38 @@ export interface ApiDialogueScenarioDialogueScenario
   };
 }
 
+export interface ApiEvaluationRuleEvaluationRule
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'evaluation_rules';
+  info: {
+    displayName: 'evaluation rule ';
+    pluralName: 'evaluation-rules';
+    singularName: 'evaluation-rule';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::evaluation-rule.evaluation-rule'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    rule_description: Schema.Attribute.Blocks;
+    rule_name: Schema.Attribute.String;
+    score_impact: Schema.Attribute.Integer;
+    trigger_condition: Schema.Attribute.Text;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiIdealResponseIdealResponse
   extends Struct.CollectionTypeSchema {
   collectionName: 'ideal_responses';
@@ -1191,6 +1223,7 @@ declare module '@strapi/strapi' {
       'api::core-need.core-need': ApiCoreNeedCoreNeed;
       'api::daily-challenge.daily-challenge': ApiDailyChallengeDailyChallenge;
       'api::dialogue-scenario.dialogue-scenario': ApiDialogueScenarioDialogueScenario;
+      'api::evaluation-rule.evaluation-rule': ApiEvaluationRuleEvaluationRule;
       'api::ideal-response.ideal-response': ApiIdealResponseIdealResponse;
       'api::personality-trait.personality-trait': ApiPersonalityTraitPersonalityTrait;
       'api::response.response': ApiResponseResponse;

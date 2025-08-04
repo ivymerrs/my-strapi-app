@@ -1,0 +1,27 @@
+{
+  "kind": "collectionType",
+  "collectionName": "evaluation_rules",
+  "info": {
+    "singularName": "evaluation-rule",
+    "pluralName": "evaluation-rules",
+    "displayName": "evaluation rule "
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "rule_name": {
+      "type": "string"
+    },
+    "rule_description": {
+      "type": "blocks"
+    },
+    "trigger_condition": {
+      "type": "text"
+    },
+    "score_impact": {
+      "type": "integer"
+    }
+  }
+}
