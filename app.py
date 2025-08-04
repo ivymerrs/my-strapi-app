@@ -23,6 +23,13 @@ global_strapi_data_cache = {}
 # 优先从环境变量加载，如果没有设置则使用 None，而不是本地地址
 ALIYUN_DASHSCOPE_API_KEY = os.environ.get("ALIYUN_DASHSCOPE_API_KEY", "")
 STRAPI_API_URL = os.environ.get("STRAPI_API_URL")
+
+# 添加详细的环境变量调试信息
+print("=== 环境变量调试信息 ===", file=sys.stderr)
+print(f"所有环境变量: {dict(os.environ)}", file=sys.stderr)
+print(f"STRAPI_API_URL 环境变量值: {os.environ.get('STRAPI_API_URL', '未设置')}", file=sys.stderr)
+print(f"ALIYUN_DASHSCOPE_API_KEY 环境变量值: {os.environ.get('ALIYUN_DASHSCOPE_API_KEY', '未设置')}", file=sys.stderr)
+
 # 如果没有设置环境变量，则打印警告并使用本地地址作为备选
 if not STRAPI_API_URL:
     STRAPI_API_URL = "http://localhost:1337"
