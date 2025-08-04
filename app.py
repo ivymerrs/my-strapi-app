@@ -20,9 +20,15 @@ def add_header(response):
 # 全局数据缓存
 global_strapi_data_cache = {}
 
-# 确保在生产环境中从环境变量中获取 API 密钥
+# 优先从环境变量加载，如果没有设置则使用 None，而不是本地地址
 ALIYUN_DASHSCOPE_API_KEY = os.environ.get("ALIYUN_DASHSCOPE_API_KEY", "")
-STRAPI_API_URL = os.environ.get("STRAPI_API_URL", "http://localhost:1337")
+STRAPI_API_URL = os.environ.get("STRAPI_API_URL")
+# 如果没有设置环境变量，则打印警告并使用本地地址作为备选
+if not STRAPI_API_URL:
+    STRAPI_API_URL = "http://localhost:1337"
+    print(f"WARNING: STRAPI_API_URL 环境变量未设置，使用默认地址: {STRAPI_API_URL}", file=sys.stderr)
+else:
+    print(f"INFO: 环境变量STRAPI_API_URL已设置，使用地址: {STRAPI_API_URL}", file=sys.stderr)
 
 
 class ChildInteractionSimulator:
@@ -350,15 +356,24 @@ def get_expert_guidance():
 
 
 def load_strapi_data():
-    """加载所有 Strapi 数据"""
-    print("INFO: 正在尝试从 Strapi 加载数据...", file=sys.stdout)
+    """
+    加载 Strapi 中的所有数据，并在应用启动时运行
+    """
+    global global_strapi_data_cache
+    
+    print("INFO: 正在尝试从 Strapi 加载数据...", file=sys.stderr)
     simulator = ChildInteractionSimulator([], [], [], [], [])
     
     try:
-        personalities = simulator._get_entity_data_from_strapi('personalities')
-        if not personalities:
-            print("WARNING: 无法从Strapi加载人格数据，使用默认数据")
-            personalities = [
+        # 使用 STRAPI_API_URL 变量
+        personalities_data = simulator._get_entity_data_from_strapi("personalities")
+        daily_challenges_data = simulator._get_entity_data_from_strapi("daily-challenges")
+        evaluation_rules_data = simulator._get_entity_data_from_strapi("evaluation-rules")
+
+        # 处理人格数据
+        if not personalities_data:
+            print("WARNING: 无法从Strapi加载人格数据，使用默认数据", file=sys.stderr)
+            personalities_data = [
                 {
                     'id': 1,
                     'attributes': {
@@ -374,15 +389,11 @@ def load_strapi_data():
                     }
                 }
             ]
-    except Exception as e:
-        print(f"ERROR: 加载人格数据失败: {e}", file=sys.stderr)
-        personalities = []
-    
-    try:
-        daily_challenges = simulator._get_entity_data_from_strapi('daily-challenges')
-        if not daily_challenges:
-            print("WARNING: 无法从Strapi加载挑战数据，使用默认数据")
-            daily_challenges = [
+        
+        # 处理挑战数据
+        if not daily_challenges_data:
+            print("WARNING: 无法从Strapi加载挑战数据，使用默认数据", file=sys.stderr)
+            daily_challenges_data = [
                 {
                     'id': 1,
                     'attributes': {
@@ -398,26 +409,58 @@ def load_strapi_data():
                     }
                 }
             ]
+        
+        # 处理评估规则数据
+        if not evaluation_rules_data:
+            print("WARNING: 无法从Strapi加载评估规则数据，使用默认数据", file=sys.stderr)
+            evaluation_rules_data = []
+        
+        # 存储到全局缓存
+        global_strapi_data_cache['personalities'] = personalities_data
+        global_strapi_data_cache['daily-challenges'] = daily_challenges_data
+        global_strapi_data_cache['evaluation-rules'] = evaluation_rules_data
+        
+        print("INFO: Strapi数据加载完成.", file=sys.stderr)
+        print(f"INFO: 加载了 {len(global_strapi_data_cache['personalities'])} 个人格.", file=sys.stderr)
+        print(f"INFO: 加载了 {len(global_strapi_data_cache['daily-challenges'])} 个挑战主题.", file=sys.stderr)
+
     except Exception as e:
-        print(f"ERROR: 加载挑战数据失败: {e}", file=sys.stderr)
-        daily_challenges = []
-    
-    try:
-        evaluation_rules = simulator._get_entity_data_from_strapi('evaluation-rules')
-        if not evaluation_rules:
-            print("WARNING: 无法从Strapi加载评估规则数据，使用默认数据")
-            evaluation_rules = []
-    except Exception as e:
-        print(f"ERROR: 加载评估规则数据失败: {e}", file=sys.stderr)
-        evaluation_rules = []
-    
-    global_strapi_data_cache['personalities'] = personalities
-    global_strapi_data_cache['daily-challenges'] = daily_challenges
-    global_strapi_data_cache['evaluation-rules'] = evaluation_rules
-    
-    print("INFO: Strapi数据加载完成.")
-    print(f"INFO: 加载了 {len(global_strapi_data_cache['personalities'])} 个人格.")
-    print(f"INFO: 加载了 {len(global_strapi_data_cache['daily-challenges'])} 个挑战主题.")
+        print(f"WARNING: 无法从Strapi加载数据，使用默认数据. 错误: {e}", file=sys.stderr)
+        # 如果加载失败，使用默认数据
+        global_strapi_data_cache['personalities'] = [
+            {
+                'id': 1,
+                'attributes': {
+                    'name': '慢能量孩子',
+                    'description': '性格内向，反应较慢，需要更多时间思考和回应'
+                }
+            },
+            {
+                'id': 2,
+                'attributes': {
+                    'name': '破能量孩子',
+                    'description': '性格外向，反应较快，容易冲动'
+                }
+            }
+        ]
+        global_strapi_data_cache['daily-challenges'] = [
+            {
+                'id': 1,
+                'attributes': {
+                    'name': '学习与成长',
+                    'description': '与孩子的学习习惯、作业、考试等相关的挑战'
+                }
+            },
+            {
+                'id': 2,
+                'attributes': {
+                    'name': '情绪管理',
+                    'description': '孩子在表达、理解和控制自己情绪方面的挑战'
+                }
+            }
+        ]
+        global_strapi_data_cache['evaluation-rules'] = []
+        print("INFO: 使用默认数据完成初始化.", file=sys.stderr)
 
 # 在应用启动时加载数据
 load_strapi_data()
