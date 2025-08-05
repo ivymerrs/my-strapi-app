@@ -142,8 +142,26 @@ class ChildInteractionSimulator:
             scenario_name = selected_scenario.get('name', '默认情境')
             scenario_desc = selected_scenario.get('description', '')
 
+        # 构建评估规则提示
+        evaluation_rules_text = ""
+        if self.evaluation_rules:
+            evaluation_rules_text = "\n\n评估规则参考：\n"
+            for rule in self.evaluation_rules:
+                if 'attributes' in rule:
+                    rule_name = rule['attributes'].get('rule_name', '')
+                    rule_desc = rule['attributes'].get('rule_description', '')
+                    trigger_condition = rule['attributes'].get('trigger_condition', '')
+                    score_impact = rule['attributes'].get('score_impact', 0)
+                    evaluation_rules_text += f"- {rule_name}: {rule_desc}\n  触发条件: {trigger_condition}\n  分数影响: {score_impact}\n"
+                else:
+                    rule_name = rule.get('rule_name', '')
+                    rule_desc = rule.get('rule_description', '')
+                    trigger_condition = rule.get('trigger_condition', '')
+                    score_impact = rule.get('score_impact', 0)
+                    evaluation_rules_text += f"- {rule_name}: {rule_desc}\n  触发条件: {trigger_condition}\n  分数影响: {score_impact}\n"
+
         evaluation_prompt_messages = [
-            {"role": "system", "content": "你是一个专业的亲子沟通AI，请根据家长和孩子的对话，分析家长的沟通方式并给出评价。"},
+            {"role": "system", "content": "你是一个专业的亲子沟通AI，请根据家长和孩子的对话，结合评估规则，分析家长的沟通方式并给出评价。"},
             {"role": "user", "content": f"""
             当前情境名称: {scenario_name}
             情境描述: {scenario_desc}
@@ -152,19 +170,26 @@ class ChildInteractionSimulator:
             
             家长说: "{parent_input}"
             孩子回应: "{child_response}"
+            {evaluation_rules_text}
             
-            请从以下几个方面进行分析，并以JSON格式返回，不要有其他任何文字。
+            请结合上述评估规则，从以下几个方面进行分析，并以JSON格式返回，不要有其他任何文字：
             1. **grade**: 根据家长的沟通效果，给出A (优秀), B (良好), 或 C (有待改进)的评级。
             2. **score**: 给出一个具体的数字分数，A=10, B=5, C=-5。
-            3. **reasonAnalysis**: 简要分析给这个评级的原因。
+            3. **reasonAnalysis**: 简要分析给这个评级的原因，特别说明哪些评估规则被触发。
             4. **suggestionEncouragement**: 给出具体的沟通建议或鼓励的话语。
             5. **parent_mood**: 分析家长的输入情绪，是'positive' (积极), 'neutral' (中性), 还是'negative' (负面)。
+            6. **triggered_rules**: 列出被触发的评估规则名称。
             """}
         ]
         
         try:
             llm_response = self._call_qwen_model(evaluation_prompt_messages)
             evaluation_data = json.loads(llm_response)
+            
+            # 如果没有触发规则字段，添加默认值
+            if 'triggered_rules' not in evaluation_data:
+                evaluation_data['triggered_rules'] = []
+                
             return evaluation_data
         except json.JSONDecodeError as e:
             print(f"ERROR: 大模型返回的JSON格式不正确。错误: {e}. 原始回应: {llm_response}", file=sys.stderr)
@@ -173,7 +198,8 @@ class ChildInteractionSimulator:
                 "score": -5,
                 "reasonAnalysis": "AI评价系统出错，无法解析大模型回应。",
                 "suggestionEncouragement": "请重试或检查后端日志。",
-                "parent_mood": "unknown"
+                "parent_mood": "unknown",
+                "triggered_rules": []
             }
 
     def _generate_expert_guidance(self, dialogue_log, selected_personality):
@@ -182,20 +208,36 @@ class ChildInteractionSimulator:
             personality_name = selected_personality.get('attributes', {}).get('name', '未知人格')
             
             formatted_dialogue = "\n".join([
-                f"家长说: \"{d.get('parent_input', '')}\"\n孩子回应: \"{d.get('child_response', '')}\"\n评价: {d.get('evaluation', {}).get('reasonAnalysis', '无评价')}"
+                f"家长说: \"{d.get('parent_input', '')}\"\n孩子回应: \"{d.get('child_response', '')}\"\n评价: {d.get('evaluation', {}).get('reasonAnalysis', '无评价')}\n触发规则: {d.get('evaluation', {}).get('triggered_rules', [])}"
                 for d in dialogue_log
             ])
 
+            # 构建评估规则参考
+            evaluation_rules_text = ""
+            if self.evaluation_rules:
+                evaluation_rules_text = "\n\n评估规则参考：\n"
+                for rule in self.evaluation_rules:
+                    if 'attributes' in rule:
+                        rule_name = rule['attributes'].get('rule_name', '')
+                        rule_desc = rule['attributes'].get('rule_description', '')
+                        evaluation_rules_text += f"- {rule_name}: {rule_desc}\n"
+                    else:
+                        rule_name = rule.get('rule_name', '')
+                        rule_desc = rule.get('rule_description', '')
+                        evaluation_rules_text += f"- {rule_name}: {rule_desc}\n"
+
             guidance_prompt_messages = [
-                {"role": "system", "content": "你是一个专业的亲子沟通专家，请根据以下对话历史，给家长提供一份全面而有针对性的指导和鼓励。"},
+                {"role": "system", "content": "你是一个专业的亲子沟通专家，请根据以下对话历史和评估规则，给家长提供一份全面而有针对性的指导和鼓励。"},
                 {"role": "user", "content": f"""
                 以下是家长与扮演'{personality_name}'孩子的AI的对话历史:
                 {formatted_dialogue}
+                {evaluation_rules_text}
 
-                请根据以上对话，以JSON格式返回以下内容，不要有其他任何文字：
-                1. **guidance**: 给出针对性的沟通建议，指明具体哪里做得好，哪里可以改进。
+                请结合评估规则，根据以上对话，以JSON格式返回以下内容，不要有其他任何文字：
+                1. **guidance**: 给出针对性的沟通建议，指明具体哪里做得好，哪里可以改进，特别关注评估规则的运用。
                 2. **encouragement**: 给出对家长的肯定和鼓励。
                 3. **totalScore**: 本次对话的总分是多少？
+                4. **ruleInsights**: 分析哪些评估规则在对话中被频繁触发或忽略。
                 """}
             ]
             
@@ -210,14 +252,16 @@ class ChildInteractionSimulator:
             return {
                 "guidance": "抱歉，专家指导生成失败，请稍后重试。",
                 "encouragement": "你的尝试本身就非常棒，加油！",
-                "totalScore": 0
+                "totalScore": 0,
+                "ruleInsights": "无法分析评估规则"
             }
         except Exception as e:
             print(f"ERROR: 生成专家指导失败: {e}", file=sys.stderr)
             return {
                 "guidance": "抱歉，生成专家指导时出现错误。",
                 "encouragement": "请继续尝试与孩子沟通。",
-                "totalScore": 0
+                "totalScore": 0,
+                "ruleInsights": "无法分析评估规则"
             }
 
     def simulate_dialogue(self, parent_input, personality_id, daily_challenge_theme_id):
