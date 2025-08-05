@@ -374,7 +374,7 @@ def load_strapi_data():
     
     try:
         # 使用 STRAPI_API_URL 变量
-        personalities_data = simulator._get_entity_data_from_strapi("personalities")
+        personalities_data = simulator._get_entity_data_from_strapi("personality-traits")
         daily_challenges_data = simulator._get_entity_data_from_strapi("daily-challenges")
         evaluation_rules_data = simulator._get_entity_data_from_strapi("evaluation-rules")
 
